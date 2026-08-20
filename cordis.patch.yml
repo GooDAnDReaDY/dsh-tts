@@ -1,0 +1,8 @@
+# dsh-tts bundle layer.
+#
+# `name` must stay the full npm package name: the client-modules registry
+# resolves the browser bundle by the loader entry name.
+- insert:
+    - id: dsh-tts
+      name: '@goodandready/dsh-tts'
+      config: {}
