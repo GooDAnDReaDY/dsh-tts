@@ -14,3 +14,7 @@ call `POST /dsh-tts/speak` later.
 ## Publication
 
 Package `@goodandready/dsh-tts`. README uses placeholders only.
+
+## Credentials
+
+Cloud API keys are entered on the Speech card (write-only password + Configured badge). The host writes them with credentials.set under the provider env name. Plugin settings store chain/models only. GET config returns configured/writable/ref, never the value.

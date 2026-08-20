@@ -21,16 +21,19 @@ Restart the Web UI, then hard-refresh the browser.
 
 ## Configure
 
-Settings → **Speech**:
+Settings -> **Speech**:
 
-- **Speak agent replies** — off by default.
-- **Provider chain** — order is the order of attempts. A provider without a
-  credential is skipped, not fatal.
+- **Speak agent replies** -- off by default.
+- **Provider chain** -- pick a provider, paste its API key in that row, then
+  Save (or leave the key field). The value is written to the host credentials
+  store immediately and is never sent back to the browser. The row shows
+  **Configured** / **Not set**. Leave the field blank to keep an existing key.
+  Local providers (`edge`, `piper`, `espeak`) have no key field.
+- A provider without a credential is skipped, not fatal.
 - Piper / eSpeak / edge-tts binaries and the Piper model path.
 
-Credential names are resolved through the DSH credentials service
-(Settings → Credentials), then the process environment. Example names, not
-values:
+Keys land in the same store the rest of DSH uses (credentials file, then the
+process environment). The plugin stores names, never values:
 
 ```text
 OPENAI_API_KEY
@@ -42,8 +45,8 @@ DEEPGRAM_API_KEY
 OPENROUTER_API_KEY
 ```
 
-Put additional keys in the same pool (`OPENAI_API_KEY_2`, …) if you use
-`@goodandready/dsh-key-rotation`.
+Put additional keys in the same pool (`<PROVIDER>_API_KEY_2`, ...) if you use
+a key-rotation plugin.
 
 ## Providers
 
@@ -81,8 +84,10 @@ status line; it does not inject audio into the model history.
 | Route | Purpose |
 |---|---|
 | `GET /dsh-tts/status` | chain and whether auto-speak is on |
+| `GET` or `PUT /dsh-tts/config` | settings plus configured/writable/ref per cloud provider. PUT may include keys; values are stored as credentials and never echoed. |
+| `PUT` or `DELETE /dsh-tts/credential` | writes or clears one host credential immediately |
 | `GET /dsh-tts/pending?after=` | audio produced for finished replies |
-| `POST /dsh-tts/speak` | `{text}` → `{ok, provider, mime, audioBase64}` |
+| `POST /dsh-tts/speak` | `{text}` -> `{ok, provider, mime, audioBase64}` |
 
 ## Requirements
 

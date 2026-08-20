@@ -9,6 +9,9 @@ test('client factory returns apply after CommonJS shim', () => {
   const srcPath = path.join(path.dirname(fileURLToPath(import.meta.url)), '../lib/client.js')
   const src = readFileSync(srcPath, 'utf8')
   assert.match(src, /var exports = module\.exports/)
+  assert.match(src, /type: 'password'/)
+  assert.match(src, /dsh-tts\/credential/)
+  assert.match(src, /leave blank to keep/)
   let captured
   const window = {
     __ModuleLoader__: {
