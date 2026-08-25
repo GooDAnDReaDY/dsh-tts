@@ -1,6 +1,6 @@
 {
   "name": "@goodandready/dsh-tts",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "description": "Text-to-speech for DeepSeek Harness: speak agent replies in the Web UI with a provider fallback chain (OpenAI, ElevenLabs, Google, Azure, Groq, Deepgram, OpenRouter, Edge, Piper, eSpeak).",
   "license": "MIT",
   "type": "module",
