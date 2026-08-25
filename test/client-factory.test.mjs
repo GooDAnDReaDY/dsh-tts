@@ -109,3 +109,12 @@ test('without settings.plugin.item the plugin falls back to the sidebar section'
   assert.ok(section, 'запасной путь: боковой раздел сохранён')
   assert.equal(section.id, '@goodandready/dsh-tts')
 })
+
+test('polling runs under an effect scope and owns its cleaner', async () => {
+  const exported = (await loadCardRegistration()).factory(() => cardReact)
+  const s = recordingCtx(['settings.plugin.item', 'conversation.input.dock'])
+  applyWithIntervalStub(exported, s.ctx)
+  const labels = s.effectLabels.map(String)
+  assert.ok(labels.some((l) => l.indexOf('опрос готовых озвучек') !== -1),
+    'опрос должен жить под ctx.effect')
+})
