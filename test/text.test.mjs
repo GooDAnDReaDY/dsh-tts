@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { applyPronunciation, assistantText, SPEECH_PHRASES, speechPhrases, stripForSpeech, splitSentences } from '../lib/text.js'
+import { applyNarrationFilters, applyPronunciation, assistantText, detectLang, SPEECH_PHRASES, speechPhrases, stripForSpeech, splitSentences } from '../lib/text.js'
 
 test('joins text blocks and ignores others', () => {
   assert.equal(assistantText({ content: [{ type: 'text', text: 'Hi' }, { type: 'tool-call' }, { type: 'text', text: 'there' }] }), 'Hi\nthere')
@@ -116,6 +116,43 @@ test('lang field filters the rule', () => {
     { from: 'DSH', to: 'ди-эс-эйч', lang: 'ru' },
   ], 'en')
   assert.equal(out, 'DSH')
+})
+
+
+// ------------------------------------------------ issue #10: длинные ответы
+
+test('maxChars 0 disables truncation', () => {
+  const long = 'x'.repeat(5000)
+  assert.equal(stripForSpeech(long, 0).length, 5000)
+})
+
+test('summary intro phrases exist for both languages', () => {
+  assert.ok(SPEECH_PHRASES.en.summaryIntro)
+  assert.ok(SPEECH_PHRASES.ru.summaryIntro)
+})
+
+
+// ------------------------------------------------------- пул: фильтры и язык
+
+test('narration filters: quotes only', () => {
+  const out = applyNarrationFilters('Действие. «Говорю это» и ещё.', { narrateQuotesOnly: true })
+  assert.equal(out, '«Говорю это»')
+})
+
+test('narration filters: skip asterisk actions', () => {
+  const out = applyNarrationFilters('Привет * машет рукой * и уходит.', { skipActions: true })
+  assert.equal(out.includes('машет'), false)
+  assert.ok(out.includes('Привет'))
+})
+
+test('narration filters: custom regex removal survives bad regex', () => {
+  assert.equal(applyNarrationFilters('a SECRET b', { removeRegex: 'SECRET' }), 'a   b')
+  assert.equal(applyNarrationFilters('ok', { removeRegex: '(' }), 'ok')
+})
+
+test('detectLang picks by letter majority', () => {
+  assert.equal(detectLang('привет мир'), 'ru')
+  assert.equal(detectLang('hello world'), 'en')
 })
 
 
