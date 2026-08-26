@@ -118,3 +118,25 @@ test('polling runs under an effect scope and owns its cleaner', async () => {
   assert.ok(labels.some((l) => l.indexOf('опрос готовых озвучек') !== -1),
     'опрос должен жить под ctx.effect')
 })
+
+// Задача #13: док чтения берёт подписи из словарей, а не из кода.
+// Проверяем по исходнику: подпись слота рисует ядро, тултипы — компонент,
+// и оба пути молчат при поломке — русская строка просто остаётся русской
+// для англоязычного читателя, и никто об этом не узнает.
+test('док чтения не держит подписи в коде', () => {
+  const srcPath = path.join(path.dirname(fileURLToPath(import.meta.url)), '../lib/client.js')
+  const src = readFileSync(srcPath, 'utf8')
+
+  const dock = src.slice(src.indexOf('function SpeakerControl'), src.indexOf('function registerSettings'))
+  for (const hardcoded of ['Чтение', 'Пауза', 'Продолжить чтение', 'Прекратить чтение']) {
+    assert.equal(dock.includes(hardcoded), false, 'подпись осталась в коде: ' + hardcoded)
+  }
+
+  for (const key of ['dockLabel', 'dockPause', 'dockResume', 'dockStop']) {
+    const inDictionaries = src.split(String.fromCharCode(39) + key + String.fromCharCode(39) + ':').length - 1
+    assert.equal(inDictionaries, 2, 'ключ ' + key + ' должен быть в обоих словарях')
+  }
+
+  assert.match(src, /locale: NS,/, 'без locale в слоте перевод не дойдёт до компонента')
+  assert.match(src, /label: \(\) => fallbackDockText\('dockLabel'\)/, 'подпись слота — через привязку')
+})
