@@ -70,8 +70,8 @@ test('markdown table becomes a short notice without the separator row', () => {
 })
 
 test('russian phrases come from the language setting', () => {
-  const out = stripForSpeech('```.\nx\n.```', 200, { phrases: speechPhrases('ru-RU') })
-  assert.match(out, /блок кода, 1 строк/)
+  const out = stripForSpeech('```ru\nпервая\nвторая\n```', 200, { phrases: speechPhrases('ru-RU') })
+  assert.match(out, /блок кода, 2 строк/)
 })
 
 test('inline code still disappears silently', () => {
