@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { assistantText, stripForSpeech, splitSentences } from '../lib/text.js'
+import { assistantText, speechPhrases, stripForSpeech, splitSentences } from '../lib/text.js'
 
 test('joins text blocks and ignores others', () => {
   assert.equal(assistantText({ content: [{ type: 'text', text: 'Hi' }, { type: 'tool-call' }, { type: 'text', text: 'there' }] }), 'Hi\nthere')
@@ -49,4 +49,37 @@ test('длинную фразу без точек всё равно режет �
 test('пустой текст не даёт пустых кусков', () => {
   assert.deepEqual(splitSentences('   ', 320), [])
   assert.deepEqual(splitSentences('', 320), [])
+})
+
+
+// ------------------------------------------------------- issue #7: код вслух
+
+test('fenced code becomes a short notice with the line count', () => {
+  const out = stripForSpeech('Before\n```js\nlet a = 1\nlet b = 2\nlet c = 3\n```\nAfter', 200)
+  assert.ok(out.includes('Before') && out.includes('After'), 'окружение сохранено: ' + out)
+  assert.match(out, /code block, 3 lines/)
+  assert.equal(out.includes('let a'), false)
+})
+
+test('markdown table becomes a short notice without the separator row', () => {
+  const md = 'Итого:\n| A | B |\n|---|---|\n| 1 | 2 |\n| 3 | 4 |'
+  const out = stripForSpeech(md, 200)
+  assert.match(out, /table, 3 rows/)
+  assert.equal(out.includes('|'), false)
+  assert.ok(out.includes('Итого:'))
+})
+
+test('russian phrases come from the language setting', () => {
+  const out = stripForSpeech('```ru\nпервая\nвторая\n```', 200, { phrases: speechPhrases('ru-RU') })
+  assert.match(out, /блок кода, 2 строк/)
+})
+
+test('inline code still disappears silently', () => {
+  const out = stripForSpeech('Run `npm i` now', 100)
+  assert.equal(out, 'Run now')
+})
+
+test('skipCode false keeps code verbatim', () => {
+  const out = stripForSpeech('Run `npm i` now', 100, { skipCode: false })
+  assert.ok(out.includes('`npm i`'))
 })
