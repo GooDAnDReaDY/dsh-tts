@@ -32,14 +32,18 @@ test('miss returns null instead of throwing', async () => {
 
 test('evicts least recently used over the limit', async () => {
   const kb = 1024
-  const { cache, cleanup } = fresh(3 * kb)
+  const { cache, cleanup } = fresh(2 * kb + 10)
+  const wait = (ms) => new Promise((r) => setTimeout(r, ms))
   try {
     const k1 = cacheKey(['one'])
     const k2 = cacheKey(['two'])
     const k3 = cacheKey(['three'])
     await cache.put(k1, 'audio/mpeg', Buffer.alloc(kb, 1))
+    await wait(5)
     await cache.put(k2, 'audio/mpeg', Buffer.alloc(kb, 2))
+    await wait(5)
     await cache.get(k1) // k1 свежее k2
+    await wait(5)
     await cache.put(k3, 'audio/mpeg', Buffer.alloc(kb, 3))
     assert.equal(await cache.get(k2), null, 'k2 должен быть вытеснен первым')
     assert.ok(await cache.get(k1), 'k1 ещё жив')
