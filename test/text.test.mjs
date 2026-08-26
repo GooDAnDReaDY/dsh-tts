@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { applyPronunciation, assistantText, speechPhrases, stripForSpeech, splitSentences } from '../lib/text.js'
+import { applyPronunciation, assistantText, SPEECH_PHRASES, speechPhrases, stripForSpeech, splitSentences } from '../lib/text.js'
 
 test('joins text blocks and ignores others', () => {
   assert.equal(assistantText({ content: [{ type: 'text', text: 'Hi' }, { type: 'tool-call' }, { type: 'text', text: 'there' }] }), 'Hi\nthere')
@@ -116,4 +116,17 @@ test('lang field filters the rule', () => {
     { from: 'DSH', to: 'ди-эс-эйч', lang: 'ru' },
   ], 'en')
   assert.equal(out, 'DSH')
+})
+
+
+// ------------------------------------------------ issue #10: длинные ответы
+
+test('maxChars 0 disables truncation', () => {
+  const long = 'x'.repeat(5000)
+  assert.equal(stripForSpeech(long, 0).length, 5000)
+})
+
+test('summary intro phrases exist for both languages', () => {
+  assert.ok(SPEECH_PHRASES.en.summaryIntro)
+  assert.ok(SPEECH_PHRASES.ru.summaryIntro)
 })
