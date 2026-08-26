@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { assistantText, speechPhrases, stripForSpeech, splitSentences } from '../lib/text.js'
+import { applyPronunciation, assistantText, SPEECH_PHRASES, speechPhrases, stripForSpeech, splitSentences } from '../lib/text.js'
 
 test('joins text blocks and ignores others', () => {
   assert.equal(assistantText({ content: [{ type: 'text', text: 'Hi' }, { type: 'tool-call' }, { type: 'text', text: 'there' }] }), 'Hi\nthere')
@@ -82,4 +82,51 @@ test('inline code still disappears silently', () => {
 test('skipCode false keeps code verbatim', () => {
   const out = stripForSpeech('Run `npm i` now', 100, { skipCode: false })
   assert.ok(out.includes('`npm i`'))
+})
+
+
+// ---------------------------------------------- issue #9: словарь произношения
+
+test('whole-word rule does not touch longer words', () => {
+  const out = applyPronunciation('DSH и dshplugins', [
+    { from: 'DSH', to: 'ди-эс-эйч', whole: true },
+  ], 'ru')
+  assert.equal(out, 'ди-эс-эйч и dshplugins')
+})
+
+test('plain rules replace every occurrence, top-down', () => {
+  const out = applyPronunciation('aXbXc', [
+    { from: 'B', to: 'C' },
+    { from: 'A', to: 'B' },
+    { from: 'X', to: '-' },
+  ], 'en')
+  // Порядок важен: B->C даёт aXcXc, A->B ничего не находит, X->- завершает.
+  assert.equal(out, 'a-b-c')
+})
+
+test('regex form works in the left side', () => {
+  const out = applyPronunciation('error at 12:30 and 99', [
+    { from: '/\\d+/', to: '#' },
+  ], 'en')
+  assert.equal(out, 'error at #:# and #')
+})
+
+test('lang field filters the rule', () => {
+  const out = applyPronunciation('DSH', [
+    { from: 'DSH', to: 'ди-эс-эйч', lang: 'ru' },
+  ], 'en')
+  assert.equal(out, 'DSH')
+})
+
+
+// ------------------------------------------------ issue #10: длинные ответы
+
+test('maxChars 0 disables truncation', () => {
+  const long = 'x'.repeat(5000)
+  assert.equal(stripForSpeech(long, 0).length, 5000)
+})
+
+test('summary intro phrases exist for both languages', () => {
+  assert.ok(SPEECH_PHRASES.en.summaryIntro)
+  assert.ok(SPEECH_PHRASES.ru.summaryIntro)
 })
