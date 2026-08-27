@@ -13,3 +13,9 @@ test('kokoro synthesizes 1s of audio', async () => {
   const chunks=[]; for await(const c of e.synthesize('hi','af_bella')) chunks.push(c)
   assert.ok(chunks[0].length>0)
 })
+
+import { F5Engine } from '../lib/engines/f5.js'
+test('f5 daemon spawns', async () => {
+  const e = new F5Engine({daemonPath:'scripts/f5_daemon.py'})
+  assert.equal(await e.ping(), true)
+})
