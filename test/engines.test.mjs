@@ -6,3 +6,10 @@ test('registry lists kokoro always, f5 only with GPU', async () => {
   const r = new EngineRegistry({gpu:false, installed:['kokoro']})
   assert.deepEqual(r.list().map(e=>e.id), ['kokoro'])
 })
+
+import { KokoroEngine } from '../lib/engines/kokoro.js'
+test('kokoro synthesizes 1s of audio', async () => {
+  const e = new KokoroEngine({modelPath: 'test/fixtures/kokoro-tiny.onnx'})
+  const chunks=[]; for await(const c of e.synthesize('hi','af_bella')) chunks.push(c)
+  assert.ok(chunks[0].length>0)
+})
