@@ -2,7 +2,7 @@
 
 <div align="center">
 
-<h3>Multi-Provider Text-to-Speech Voice Output with LRU Audio Cache for DeepSeek Harness</h3>
+<h3>DeepSeek Harness 智能体语音朗读扩展插件（支持 10+ 引擎与磁盘缓存）</h3>
 
 <p align="center">
   <a href="https://www.npmjs.com/package/@goodandready/dsh-tts"><img src="https://img.shields.io/npm/v/@goodandready/dsh-tts.svg?style=for-the-badge&color=6366f1&labelColor=1e1b4b" alt="npm version"></a>
@@ -21,19 +21,19 @@
 
 ---
 
-## ⚡ Overview
+## ⚡ 插件概览
 
-**`dsh-tts`** provides spoken voice synthesis for agent replies in **DeepSeek Harness** Web UI across 9+ cloud and offline TTS backends with smart markdown scrubbing and disk caching.
+**`dsh-tts`** 为 **DeepSeek Harness** Web UI 提供智能体语音朗读功能，支持多达 10 种云端与本地 TTS 引擎，具备代码过滤与磁盘 LRU 缓存。
 
 ```mermaid
 graph LR
-    Reply[💬 Agent Reply Text] --> Filter[Markdown & Code Filter]
-    Filter --> Cache{Disk LRU Cache}
-    Cache -->|Hit| Audio[Play Synthesis]
-    Cache -->|Miss| Chain{Fallback Chain}
-    Chain -->|Priority 1| Eleven[ElevenLabs / OpenAI]
-    Chain -.->|Priority 2| Edge[EdgeTTS / Azure]
-    Chain -.->|Priority 3| Local[Local Piper / eSpeak]
+    Reply[💬 智能体生成文本] --> Filter[代码与语法过滤器]
+    Filter --> Cache{磁盘 LRU 缓存}
+    Cache -->|命中缓存| Audio[播放语音]
+    Cache -->|未命中| Chain{备用链轮询}
+    Chain -->|首选引擎| Eleven[ElevenLabs / OpenAI]
+    Chain -.->|备选引擎| Edge[EdgeTTS / Azure]
+    Chain -.->|离线引擎| Local[本地 Piper / eSpeak]
     Eleven --> Audio
     Edge --> Audio
     Local --> Audio
@@ -41,16 +41,7 @@ graph LR
 
 ---
 
-## ✨ Key Features
-
-* 🔊 **10+ TTS Engines**: ElevenLabs, OpenAI Audio, Azure Cognitive, Google Cloud, EdgeTTS (free), Deepgram Aura, Groq TTS, Piper, eSpeak.
-* 🧹 **Smart Text Scrubbing**: Strips fenced code blocks, formulas, and markdown noise before synthesis.
-* 💾 **Disk LRU Cache**: Automatically reuses synthesized audio for repeated phrases, saving API costs.
-* 🎭 **Role Overrides**: Assign custom voices, models, and SSML styles to specific agent personas.
-
----
-
-## 📦 Quick Installation
+## 📦 安装指南
 
 ```bash
 dsh plugin --profile web add @goodandready/dsh-tts
@@ -58,6 +49,6 @@ dsh plugin --profile web add @goodandready/dsh-tts
 
 ---
 
-## 📄 License
+## 📄 开源协议
 
 MIT © [GooDAnDReaDY](https://github.com/GooDAnDReaDY)
