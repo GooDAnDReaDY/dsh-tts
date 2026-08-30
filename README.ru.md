@@ -2,7 +2,7 @@
 
 <div align="center">
 
-<h3>Озвучивание ответов агента через 10+ TTS-провайдеров с умной фильтрацией и кэшированием на диске для DeepSeek Harness</h3>
+<h3>Озвучивание ответов агента через 16 TTS-провайдеров с умной фильтрацией и кэшированием на диске для DeepSeek Harness</h3>
 
 <p align="center">
   <a href="https://www.npmjs.com/package/@goodandready/dsh-tts"><img src="https://img.shields.io/npm/v/@goodandready/dsh-tts.svg?style=for-the-badge&color=6366f1&labelColor=1e1b4b" alt="npm version"></a>
@@ -40,8 +40,8 @@ graph LR
 
     subgraph Fallback [Цепочка фолбеков TTS]
         LRU -->|Промах кэша| Chain{Активная цепочка}
-        Chain -->|1-й приоритет| P1[ElevenLabs / OpenAI]
-        Chain -.->|При лимитах 429| P2[EdgeTTS / Azure / Google]
+        Chain -->|1-й приоритет| P1[ElevenLabs / OpenAI / CosyVoice]
+        Chain -.->|При лимитах 429| P2[EdgeTTS / Kokoro / Deepgram]
         Chain -.->|Оффлайн фолбек| P3[Локальный Piper / eSpeak NG]
     end
 
@@ -60,46 +60,71 @@ graph LR
 
 ---
 
-## ✨ Ключевые возможности
-
-* 🔊 **10+ TTS-движков**: ElevenLabs, OpenAI Audio, Azure Cognitive, Google Cloud, EdgeTTS (бесплатно без ключей), Deepgram Aura, Groq TTS, Piper и eSpeak NG.
-* 🛡️ **Цепочки отказоустойчивости**: автоматический перебор провайдеров, чтобы исчерпание лимитов или сбои сети не оставляли агента безмолвным.
-* 🧹 **Умная очистка текста**: замена блоков кода (`skipCode`), разметки Markdown, формул LaTeX и действий в звёздочках (`skipActions`) на краткие голосовые уведомления.
-* 💾 **Дисковый LRU-кэш**: сохранение аудио повторных фраз на диске (`cacheMaxMb`, по умолчанию 100 МБ) с вытеснением старых записей.
-* 🎭 **Индивидуальные роли**: назначение разных голосов, моделей и SSML-стилей разным субагентам и персонажам.
-* 🌐 **Автоопределение языка**: динамическое определение `ru`/`en` для каждой фразы и переключение голоса на лету (`autoDetect`).
-* 🔒 **Безопасность**: ключи читаются через сервис `ctx.credentials` на хосте.
-
----
-
-## 🛠️ Матрица поддерживаемых провайдеров
+## 🛠️ Полная матрица поддерживаемых провайдеров (16 бэкендов)
 
 | Ключ | Сервис | Модель по умолчанию | Голос по умолчанию | Переменная ключа | Особенности |
 |---|---|---|---|---|---|
 | `elevenlabs` | ElevenLabs API | `eleven_multilingual_v2` | `Rachel` | `ELEVENLABS_API_KEY` | Сверхреалистичный эмоциональный синтез |
-| `openai` | OpenAI Audio | `tts-1` | `alloy` | `OPENAI_API_KEY` | Качественный стандартный голос |
-| `azure` | Azure Cognitive Speech | `neural` | по региону | `AZURE_SPEECH_KEY` | Корпоративные нейронные голоса |
-| `google` | Google Cloud TTS | `Neural2` | по языку | `GOOGLE_TTS_KEY` | Многоязычные нейросети Google |
-| `edgetts` | Microsoft Edge Online | Online Neural | `ru-RU-SvetlanaNeural` | *Не требуется* | **Бесплатный высококачественный нейронный синтез без API-ключей** |
+| `openai` | OpenAI Audio | `gpt-4o-mini-tts` / `tts-1` | `alloy` | `OPENAI_API_KEY` | Качественный стандартный голос |
+| `edge` | Microsoft Edge Online | `ru-RU-SvetlanaNeural` | `ru-RU-SvetlanaNeural` | *Не требуется* | **Бесплатный высококачественный нейронный синтез без API-ключей** |
+| `siliconflow` | SiliconFlow CosyVoice | `FunAudioLLM/CosyVoice2-0.5B` | по умолчанию | `SILICONFLOW_API_KEY` | Передовая нейросеть CosyVoice2 |
+| `deepinfra` | DeepInfra Kokoro | `hexgrad/Kokoro-82M` | по умолчанию | `DEEPINFRA_API_KEY` | Быстрый инференс модели Kokoro-82M |
+| `fireworks` | Fireworks AI | `kokoro` | по умолчанию | `FIREWORKS_API_KEY` | Сверхнизкая задержка Kokoro |
+| `minimax` | MiniMax Speech | `speech-01-turbo` | по умолчанию | `MINIMAX_API_KEY` | Высокоэмоциональный синтез |
+| `mimo` | Xiaomi MiMo Audio | `mimo-v2.5-tts` | по умолчанию | `MIMO_API_KEY` | Потоковый синтез речи |
+| `google` | Google Cloud TTS | `gemini-2.5-flash-preview-tts` | по языку | `GEMINI_API_KEY` | Многоязычные нейросети Google Gemini |
+| `azure` | Azure Cognitive Speech | `en-US-JennyNeural` | по региону | `AZURE_SPEECH_KEY` | Корпоративные нейронные голоса |
 | `deepgram` | Deepgram Aura | `aura-asteria-en` | `asteria` | `DEEPGRAM_API_KEY` | Сверхнизкая задержка вывода речи |
-| `groq` | Groq TTS | Быстрый инференс | `default` | `GROQ_API_KEY` | Мгновенная генерация |
+| `groq` | Groq TTS | `playai-tts` | `default` | `GROQ_API_KEY` | Мгновенная генерация речи |
+| `openrouter` | OpenRouter Audio | `openai/gpt-4o-mini-tts` | `alloy` | `OPENROUTER_API_KEY` | Унифицированный доступ через роутер |
+| `custom` | Пользовательский OpenAI | Настраивается | Настраивается | `CUSTOM_TTS_API_KEY` | Любой `/v1/audio/speech` эндпоинт |
 | `piper` | Локальный Piper ONNX | Локальная модель | из модели | *Не требуется* | 100% оффлайн нейронный движок |
 | `espeak` | Локальный eSpeak NG | Системный синтез | `ru` / `en` | *Не требуется* | 100% оффлайн базовый синтезатор |
 
 ---
 
-## 🧹 Параметры фильтрации и озвучивания
+## 🧹 Движок умной фильтрации и очистки текста
 
-| Параметр | По умолчанию | Описание |
-|---|---|---|
-| `speakReplies` | `false` | Автоматически озвучивать новые ответы ассистента в Web UI |
-| `skipCode` | `true` | Заменять блоки кода коротким голосовым уведомлением вместо зачитывания синтаксиса |
-| `skipActions` | `false` | Пропускать действия в звёздочках (`*действие*`) |
-| `narrateQuotesOnly` | `false` | Озвучивать только текст внутри кавычек |
-| `removeRegex` | `""` | Пользовательское регулярное выражение для удаления шаблонов |
-| `autoDetect` | `false` | Автоматически определять язык каждой фразы |
-| `cache` | `true` | Кэшировать синтезированное аудио на диске |
-| `cacheMaxMb` | `100` | Лимит размера дискового кэша в МБ (LRU вытеснение) |
+Перед передачей текста в TTS-движки `dsh-tts` очищает его от синтаксического шума:
+
+### 1. Голосовые уведомления вместо кода
+* **Блоки кода**: заменяются голосовой фразой *"блок кода, N строк"* / *"code block, N lines"*.
+* **Таблицы**: озвучиваются как *"таблица, N строк"* / *"table, N rows"*.
+* **Пересказы**: предваряются фразой *"Пересказ ответа"*.
+
+### 2. Фильтры наррации (`applyNarrationFilters`)
+* `skipCode` (`true` по умолчанию): заменяет блоки кода на короткие голосовые уведомления.
+* `skipActions`: вырезает действия в звёздочках (`*улыбается*`) перед синтезом.
+* `narrateQuotesOnly`: озвучивает только текст внутри кавычек.
+* `removeRegex`: пользовательская регулярка для удаления тегов, ссылок или временных меток.
+* `autoDetect`: автоопределение языка фразы (`ru`/`en`) и переключение голоса на лету.
+
+---
+
+## 💾 Дисковый LRU-кэш (`createSpeechCache`)
+
+Повторяющиеся фразы автоматически хэшируются по `(текст, провайдер, модель, голос)` и сохраняются на диск:
+* **Мгновенный ответ**: нулевая задержка сети при попадании в кэш.
+* **Экономия баланса**: ноль повторных списаний за одинаковые фразы.
+* **Лимит размера**: параметр `cacheMaxMb` (по умолчанию `100` МБ) автоматически вытесняет самые давние записи.
+
+---
+
+## 🎭 Переопределение ролей
+
+Назначение индивидуальных голосов, моделей и SSML-стилей разным агентам:
+
+```yaml
+dsh-tts:
+  speakReplies: true
+  roleOverrides:
+    coder:
+      provider: openai
+      voice: onyx
+    narrator:
+      provider: elevenlabs
+      voice: Rachel
+```
 
 ---
 
@@ -121,11 +146,13 @@ dsh-tts:
   cacheMaxMb: 150
   autoDetect: true
   chain:
-    - provider: edgetts
-      voice: ru-RU-DmitryNeural
+    - provider: edge
+      voice: ru-RU-SvetlanaNeural
+    - provider: siliconflow
+      model: FunAudioLLM/CosyVoice2-0.5B
     - provider: openai
       model: tts-1
-      voice: onyx
+      voice: alloy
     - provider: piper
 ```
 

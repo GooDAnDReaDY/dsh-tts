@@ -40,8 +40,8 @@ graph LR
 
     subgraph Fallback [TTS 引擎备用链]
         LRU -->|未命中| Chain{生效备用链}
-        Chain -->|首选优先级| P1[ElevenLabs / OpenAI]
-        Chain -.->|遇 429 限流| P2[EdgeTTS / Azure / Google]
+        Chain -->|首选优先级| P1[ElevenLabs / OpenAI / CosyVoice]
+        Chain -.->|遇 429 限流| P2[EdgeTTS / Kokoro / Deepgram]
         Chain -.->|离线兜底| P3[本地 Piper / eSpeak NG]
     end
 
@@ -60,18 +60,25 @@ graph LR
 
 ---
 
-## 🛠️ 支持的服务商矩阵
+## 🛠️ 支持的 16 大服务商矩阵
 
-| 服务商 Key | 对应后端 | 默认模型 | 默认发音人 | 环境变量凭证 | 特性说明 |
+| 服务商 Key | 对应引擎 | 默认模型 | 默认发音人 | 凭证变量名 | 说明与亮点 |
 |---|---|---|---|---|---|
 | `elevenlabs` | ElevenLabs API | `eleven_multilingual_v2` | `Rachel` | `ELEVENLABS_API_KEY` | 极致拟人情感音色 |
-| `openai` | OpenAI Audio | `tts-1` | `alloy` | `OPENAI_API_KEY` | 经典高清发音 |
-| `azure` | Azure 认知语音 | `neural` | 按区域适配 | `AZURE_SPEECH_KEY` | 企业级神经网络语音 |
-| `google` | Google Cloud TTS | `Neural2` | 语种默认 | `GOOGLE_TTS_KEY` | 多语种高保真合成 |
-| `edgetts` | 微软 Edge 在线 | Online Neural | `zh-CN-XiaoxiaoNeural` | *无需密钥* | **免费免 Key 高保真神经网络语音** |
-| `deepgram` | Deepgram Aura | `aura-asteria-en` | `asteria` | `DEEPGRAM_API_KEY` | 极低延迟语音输出 |
-| `groq` | Groq TTS | 极速推理 | `default` | `GROQ_API_KEY` | 毫秒级生成 |
-| `piper` | 本地 Piper ONNX | 本地模型 | 模型默认 | *无需密钥* | 100% 离线轻量级神经网络引擎 |
+| `openai` | OpenAI Audio | `gpt-4o-mini-tts` / `tts-1` | `alloy` | `OPENAI_API_KEY` | 经典高清发音 |
+| `edge` | 微软 Edge 在线 | `zh-CN-XiaoxiaoNeural` | `zh-CN-XiaoxiaoNeural` | *无需密钥* | **免费免 Key 高保真神经网络语音** |
+| `siliconflow` | 硅基流动 CosyVoice | `FunAudioLLM/CosyVoice2-0.5B` | 默认 | `SILICONFLOW_API_KEY` | SOTA 级别 CosyVoice2 语音大模型 |
+| `deepinfra` | DeepInfra Kokoro | `hexgrad/Kokoro-82M` | 默认 | `DEEPINFRA_API_KEY` | 极速轻量 Kokoro-82M 开源引擎 |
+| `fireworks` | Fireworks AI | `kokoro` | 默认 | `FIREWORKS_API_KEY` | 毫秒级 Kokoro 推理服务 |
+| `minimax` | MiniMax Speech | `speech-01-turbo` | 默认 | `MINIMAX_API_KEY` | 高表现力中文旗舰发音 |
+| `mimo` | 小米 MiMo Audio | `mimo-v2.5-tts` | 默认 | `MIMO_API_KEY` | 低延迟流式语音 |
+| `google` | Google Cloud TTS | `gemini-2.5-flash-preview-tts` | 语种默认 | `GEMINI_API_KEY` | 谷歌 Gemini 多语种神经网络合成 |
+| `azure` | Azure 认知语音 | `en-US-JennyNeural` | 区域默认 | `AZURE_SPEECH_KEY` | 企业级神经网络发音人 |
+| `deepgram` | Deepgram Aura | `aura-asteria-en` | `asteria` | `DEEPGRAM_API_KEY` | 极低延迟英文输出 |
+| `groq` | Groq TTS | `playai-tts` | `default` | `GROQ_API_KEY` | 极速推理 |
+| `openrouter` | OpenRouter Audio | `openai/gpt-4o-mini-tts` | `alloy` | `OPENROUTER_API_KEY` | 统一路由器通道 |
+| `custom` | 自定义 OpenAI 规范 | 可配置 | 可配置 | `CUSTOM_TTS_API_KEY` | 任意兼容 `/v1/audio/speech` 接口 |
+| `piper` | 本地 Piper ONNX | 本地 ONNX 权重 | 模型默认 | *无需密钥* | 100% 离线轻量级神经网络引擎 |
 | `espeak` | 本地 eSpeak NG | 系统合成器 | `zh` / `en` | *无需密钥* | 100% 离线轻量兜底 |
 
 ---
