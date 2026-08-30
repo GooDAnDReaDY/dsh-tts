@@ -15,45 +15,106 @@
 <a name="-english"></a>
 ## 🇬🇧 English
 
-Text-to-speech for the DeepSeek Harness Web UI: speak agent replies aloud via a provider fallback chain (OpenAI, ElevenLabs, Google, Azure, Groq, Deepgram, OpenRouter, Edge, Piper, eSpeak).
+# dsh-tts
 
-### Features
+Text-to-speech for the DeepSeek Harness Web GUI. When **Speak agent replies**
+is on, each finished assistant turn is synthesized on the host and played in
+the browser. API keys never reach the browser.
 
-- **Fallback chain**: tries providers in order until one succeeds; rate limits or provider downtime will not leave the agent silent.
-- **Smart text scrubbing**: code blocks, markdown syntax, and equations are stripped or summarized before synthesis so the agent doesn't read out syntax noise.
-- **Synthesis caching**: identical sentences reuse cached audio (LRU disk cache with configurable `cacheMaxMb`).
-- **Role overrides**: assign distinct voices, models, and SSML styles to different personas or agents.
-- **Auto language detection**: dynamically selects appropriate voice models for multilingual dialogs.
+A later messenger hub can call the same host chain (`POST /dsh-tts/speak` or
+the `speak_text` tool). This package does not talk to Telegram itself.
 
-### Install
+## Install
 
 ```bash
+# From npm (after a GitHub/npm release):
 dsh plugin --profile web add @goodandready/dsh-tts
+
+# From a local checkout:
+dsh plugin --profile web add file:/path/to/dsh-tts
 ```
 
-Restart the Web UI (`systemctl --user restart dsh-web`) and reload the browser tab.
+Restart the Web UI, then hard-refresh the browser.
 
-### Providers
+## Configure
 
-| Key | Service | Model / Voice | Credential |
+Settings -> **Speech**:
+
+- **Speak agent replies** -- off by default.
+- **Provider chain** -- pick a provider, paste its API key in that row, then
+  Save (or leave the key field). The value is written to the host credentials
+  store immediately and is never sent back to the browser. The row shows
+  **Configured** / **Not set**. Leave the field blank to keep an existing key.
+  Local providers (`edge`, `piper`, `espeak`) have no key field.
+- A provider without a credential is skipped, not fatal.
+- Piper / eSpeak / edge-tts binaries and the Piper model path.
+
+Keys land in the same store the rest of DSH uses (credentials file, then the
+process environment). The plugin stores names, never values:
+
+```text
+OPENAI_API_KEY
+ELEVENLABS_API_KEY
+GEMINI_API_KEY
+AZURE_SPEECH_KEY
+GROQ_API_KEY
+DEEPGRAM_API_KEY
+OPENROUTER_API_KEY
+```
+
+Put additional keys in the same pool (`<PROVIDER>_API_KEY_2`, ...) if you use
+a key-rotation plugin.
+
+## Providers
+
+| Key | Service | Default model / voice | Credential |
 |---|---|---|---|
-| `elevenlabs` | ElevenLabs | `eleven_multilingual_v2` / `Rachel` | `ELEVENLABS_API_KEY` |
-| `openai` | OpenAI Audio | `tts-1` / `alloy` | `OPENAI_API_KEY` |
-| `azure` | Azure Cognitive Speech | neural voices | `AZURE_SPEECH_KEY` |
-| `google` | Google Cloud TTS | Neural2 | `GOOGLE_TTS_KEY` |
-| `edgetts` | Microsoft Edge TTS | Online Neural | none (free) |
+| `openai` | OpenAI Audio Speech | `gpt-4o-mini-tts` / `alloy` | `OPENAI_API_KEY` |
+| `elevenlabs` | ElevenLabs | `eleven_multilingual_v2` | `ELEVENLABS_API_KEY` |
+| `google` | Gemini TTS | `gemini-2.5-flash-preview-tts` / `Kore` | `GEMINI_API_KEY` |
+| `azure` | Azure Speech | neural voice + region | `AZURE_SPEECH_KEY` + region |
+| `groq` | Groq PlayAI | `playai-tts` | `GROQ_API_KEY` |
 | `deepgram` | Deepgram Aura | `aura-asteria-en` | `DEEPGRAM_API_KEY` |
-| `groq` | Groq TTS | fast inference | `GROQ_API_KEY` |
-| `piper` | Local Piper neural TTS | local ONNX models | none (offline) |
-| `espeak` | Local eSpeak NG | system synth | none (offline) |
+| `openrouter` | OpenRouter `/audio/speech` | `openai/gpt-4o-mini-tts-2025-12-15` | `OPENROUTER_API_KEY` |
+| `edge` | Microsoft Edge Neural via `edge-tts` CLI | `ru-RU-SvetlanaNeural` | none |
+| `piper` | local Piper | path to an ONNX model | none |
+| `espeak` | eSpeak NG | voice `ru` | none |
 
-### Configuration (Web GUI)
+Default chain: `edge` → `piper` → `espeak`. Deepgram Aura does not list Russian;
+keep it below a Russian-capable voice if you speak Russian.
 
-Navigate to **Settings → Plugins → Plugin settings → TTS**:
-- **Speak replies**: Toggle automatic speech output on new agent messages.
-- **Skip code blocks**: Replaces code blocks with a short spoken cue.
-- **Provider Chain**: Reorder fallback hierarchy with Up/Down buttons.
-- **Cache**: Enable synthesis audio caching and disk limit.
+### Free local / CLI providers
+
+```bash
+pip install edge-tts          # provides the `edge-tts` binary
+# piper: install the Piper binary and point Settings at your .onnx model
+sudo apt install espeak-ng    # or the equivalent package on your OS
+```
+
+## Tool
+
+`speak_text(text)` — synthesize with the same chain. The tool result is a short
+status line; it does not inject audio into the model history.
+
+## Routes
+
+| Route | Purpose |
+|---|---|
+| `GET /dsh-tts/status` | chain and whether auto-speak is on |
+| `GET` or `PUT /dsh-tts/config` | settings plus configured/writable/ref per cloud provider. PUT may include keys; values are stored as credentials and never echoed. |
+| `PUT` or `DELETE /dsh-tts/credential` | writes or clears one host credential immediately |
+| `GET /dsh-tts/pending?after=` | audio produced for finished replies |
+| `POST /dsh-tts/speak` | `{text}` -> `{ok, provider, mime, audioBase64}` |
+
+## Requirements
+
+- DeepSeek Harness with the Web GUI
+- Node 20+
+- Optional: `edge-tts`, `piper`, `espeak-ng` for the free providers
+
+## License
+
+MIT
 
 ---
 
@@ -61,15 +122,14 @@ Navigate to **Settings → Plugins → Plugin settings → TTS**:
 <details open>
 <summary><h2>🇷🇺 Русский (Полное руководство)</h2></summary>
 
-Озвучивание ответов агента для Web GUI DeepSeek Harness через цепочку фолбеков провайдеров (OpenAI, ElevenLabs, Google, Azure, Groq, Deepgram, OpenRouter, EdgeTTS, Piper, eSpeak).
+Озвучивание текста (TTS) для Web GUI DeepSeek Harness. При включённой опции **Озвучивать ответы агента**, каждая готовая реплика ассистента синтезируется на хосте и воспроизводится в браузере. API-ключи никогда не попадают в браузер.
 
-### Возможности
+### Возможности и архитектура
 
-- **Цепочка фолбеков**: перебирает TTS-провайдеров по порядку до первого успешного ответа; исчерпание лимитов не прервет озвучивание.
-- **Умная очистка текста**: блоки кода, разметка Markdown и формулы вырезаются или заменяются короткими голосовыми ремарками, чтобы агент не зачитывал синтаксический шум.
-- **Кэширование синтеза**: повторяющиеся фразы берутся из дискового LRU-кэша (`cacheMaxMb`), экономя трафик и баланс.
-- **Переопределения ролей**: назначение индивидуальных голосов, моделей и SSML-стилей разным агентам и персонажам.
-- **Автоопределение языка**: автоматический выбор нужного голоса при переключении между русским и английским.
+- **Цепочка фолбеков**: пробует провайдеров по списку до первого успешного ответа; исчерпание лимитов не прервёт воспроизведение.
+- **Очистка синтаксического шума**: блоки кода (`skipCode`), разметка Markdown и формулы вырезаются или заменяются голосовыми уведомлениями.
+- **Дисковый LRU-кэш**: повторные фразы берутся из кэша (`cacheMaxMb`), экономя баланс API и время.
+- **Индивидуальные роли**: назначение разных голосов, моделей и SSML-стилей разным персонажам.
 
 ### Установка
 
@@ -77,29 +137,21 @@ Navigate to **Settings → Plugins → Plugin settings → TTS**:
 dsh plugin --profile web add @goodandready/dsh-tts
 ```
 
-Перезапустите Web UI (`systemctl --user restart dsh-web`) и обновите страницу.
-
 ### Провайдеры
 
-| Ключ | Сервис | Модель / Голос | Учётные данные |
+| Ключ | Сервис | Модель по умолчанию | Учётные данные |
 |---|---|---|---|
 | `elevenlabs` | ElevenLabs | `eleven_multilingual_v2` / `Rachel` | `ELEVENLABS_API_KEY` |
 | `openai` | OpenAI Audio | `tts-1` / `alloy` | `OPENAI_API_KEY` |
 | `azure` | Azure Speech | нейросети Azure | `AZURE_SPEECH_KEY` |
 | `google` | Google Cloud TTS | Neural2 | `GOOGLE_TTS_KEY` |
 | `edgetts` | Microsoft Edge TTS | Online Neural | не требуются (бесплатно) |
-| `deepgram` | Deepgram Aura | `aura-asteria-en` | `DEEPGRAM_API_KEY` |
-| `groq` | Groq TTS | быстрый инференс | `GROQ_API_KEY` |
 | `piper` | Локальный Piper | локальные ONNX модели | не требуются (оффлайн) |
 | `espeak` | Локальный eSpeak NG | системный синтез | не требуются (оффлайн) |
 
-### Настройки (Web GUI)
+## Лицензия
 
-Настройки → **Плагины → Настройки плагинов → TTS**:
-- **Озвучивать ответы**: автоматическое чтение вслух новых реплик агента.
-- **Пропускать код**: заменяет блоки кода на голосовое уведомление.
-- **Цепочка провайдеров**: настройка приоритетов и порядка провайдеров.
-- **Кэш**: включение дискового кэша и ограничение его размера.
+MIT
 
 </details>
 
@@ -109,15 +161,14 @@ dsh plugin --profile web add @goodandready/dsh-tts
 <details>
 <summary><h2>🇨🇳 中文 (完整技术文档)</h2></summary>
 
-为 DeepSeek Harness Web GUI 打造的文本转语音 (TTS) 朗读插件：支持多服务商故障转移备用链（OpenAI、ElevenLabs、Google、Azure、Groq、Deepgram、OpenRouter、EdgeTTS、Piper、eSpeak）。
+DeepSeek Harness Web GUI 文本转语音 (TTS) 朗读插件。开启 **朗读智能体回复** 后，助手生成的每条消息均由服务端合成并在浏览器中实时播放。
 
-### 核心功能
+### 核心特性
 
-- **多重备用链**：按顺序轮询 TTS 引擎，单一服务商限流或网络异常不会导致朗读中断。
-- **智能文本清洗**：在语音合成前自动过滤代码块、Markdown 标记及公式，避免机械朗读语法符号。
-- **合成音频缓存**：相同句子直接命中本地磁盘 LRU 缓存 (`cacheMaxMb`)，节省调用费用与等待时间。
-- **角色个性化覆盖**：支持为不同智能体分配独立的声音、模型与 SSML 风格。
-- **多语言自动识别**：根据生成内容动态切换中、英等对应语种的最佳发音人。
+- **故障转移备用链**：按优先级轮询合成引擎，避免单点故障导致静音。
+- **智能文本清洗**：自动跳过代码块 (`skipCode`) 与 Markdown 语法符号。
+- **磁盘 LRU 缓存**：相同语句直接读取本地音频缓存 (`cacheMaxMb`)。
+- **多角色发音人覆盖**：为不同智能体独立配置发音人与 SSML 风格。
 
 ### 安装方法
 
@@ -125,20 +176,20 @@ dsh plugin --profile web add @goodandready/dsh-tts
 dsh plugin --profile web add @goodandready/dsh-tts
 ```
 
-安装后重启 Web UI (`systemctl --user restart dsh-web`) 并刷新浏览器。
+### 引擎列表
 
-### 服务商矩阵
-
-| 标识 Key | 对应服务 | 默认模型 / 声音 | 凭据变量名 |
+| Key | 对应服务 | 默认模型 / 声音 | 凭证 |
 |---|---|---|---|
 | `elevenlabs` | ElevenLabs | `eleven_multilingual_v2` / `Rachel` | `ELEVENLABS_API_KEY` |
 | `openai` | OpenAI Audio | `tts-1` / `alloy` | `OPENAI_API_KEY` |
-| `azure` | Azure 认知语音 | 神经网络发音人 | `AZURE_SPEECH_KEY` |
+| `azure` | Azure 语音 | 神经网络音色 | `AZURE_SPEECH_KEY` |
 | `google` | Google Cloud TTS | Neural2 | `GOOGLE_TTS_KEY` |
-| `edgetts` | 微软 Edge TTS | 在线高保真语音 | 无需密钥（免费使用） |
-| `deepgram` | Deepgram Aura | `aura-asteria-en` | `DEEPGRAM_API_KEY` |
-| `groq` | Groq TTS | 极速推理 | `GROQ_API_KEY` |
-| `piper` | 本地 Piper 引擎 | 本地 ONNX 模型 | 无需密钥（完全离线） |
-| `espeak` | 本地 eSpeak NG | 轻量级系统合成 | 无需密钥（完全离线） |
+| `edgetts` | 微软 Edge TTS | 在线高保真语音 | 免费免 Key |
+| `piper` | 本地 Piper 引擎 | 本地 ONNX 权重 | 完全离线 |
+| `espeak` | 本地 eSpeak NG | 系统合成器 | 完全离线 |
+
+## 开源协议
+
+MIT
 
 </details>
