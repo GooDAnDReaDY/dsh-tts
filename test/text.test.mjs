@@ -167,3 +167,27 @@ test('summary intro phrases exist for both languages', () => {
   assert.ok(SPEECH_PHRASES.en.summaryIntro)
   assert.ok(SPEECH_PHRASES.ru.summaryIntro)
 })
+
+test('built-in IT dictionary correctly replaces IT terms in Russian', () => {
+  const input = 'Настрой Nginx и K8s для SQL базы данных, а также Docker API и JSON config.'
+  const out = applyPronunciation(input, [], 'ru', true)
+  assert.ok(out.includes('энджинкс'), 'Nginx -> энджинкс')
+  assert.ok(out.includes('кубернетис'), 'K8s -> кубернетис')
+  assert.ok(out.includes('сиквел'), 'SQL -> сиквел')
+  assert.ok(out.includes('докер'), 'Docker -> докер')
+  assert.ok(out.includes('апи'), 'API -> апи')
+  assert.ok(out.includes('джейсон'), 'JSON -> джейсон')
+})
+
+test('built-in IT dictionary is skipped when enableBuiltinIt is false', () => {
+  const input = 'Nginx и SQL'
+  const out = applyPronunciation(input, [], 'ru', false)
+  assert.equal(out, 'Nginx и SQL')
+})
+
+test('custom user rules override built-in IT dictionary', () => {
+  const input = 'Проверь SQL'
+  const out = applyPronunciation(input, [{ from: 'SQL', to: 'эс-кью-эль', whole: true, lang: 'ru' }], 'ru', true)
+  assert.equal(out, 'Проверь эс-кью-эль')
+})
+
