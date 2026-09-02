@@ -2,7 +2,7 @@
 
 <div align="center">
 
-<h3>Multi-Provider Text-to-Speech Voice Synthesis with Smart Scrubbing & Disk LRU Cache for DeepSeek Harness</h3>
+<h3>Multi-Provider Text-to-Speech Voice Synthesis with Local Neural Engines, Sub-300ms Streaming, IT Dictionary & Messenger Integration for DeepSeek Harness</h3>
 
 <p align="center">
   <a href="https://www.npmjs.com/package/@goodandready/dsh-tts"><img src="https://img.shields.io/npm/v/@goodandready/dsh-tts.svg?style=for-the-badge&color=6366f1&labelColor=1e1b4b" alt="npm version"></a>
@@ -27,14 +27,19 @@
 
 ## ⚡ Overview
 
-**`dsh-tts`** provides robust, lifelike spoken voice synthesis for assistant replies in the **DeepSeek Harness** Web UI. When **Speak agent replies** is enabled, each finished assistant turn is synthesized on the host and streamed directly to the browser.
+**`dsh-tts`** provides robust, lifelike spoken voice synthesis for assistant replies in the **DeepSeek Harness** Web UI. When **Speak agent replies** is enabled, each finished assistant turn or real-time streaming chunk is synthesized on the host and streamed directly to the browser.
 
-API keys never reach client browsers: synthesis is executed entirely on the host backend across **independent multi-provider fallback chains**.
+API keys never reach client browsers: synthesis is executed entirely on the host backend across **independent multi-provider fallback chains**, including completely offline neural models (Kokoro-82M and F5-TTS).
 
 ```mermaid
 graph LR
     subgraph Input [Assistant Message]
-        Reply[💬 Agent Reply Text] --> Scrub[Smart Text Scrubbing & Formatting]
+        Reply[💬 Agent Reply Text] --> Scrub[Smart Text Scrubbing & IT Dictionary]
+    end
+
+    subgraph Stream [Low-Latency Streaming]
+        Scrub --> SSE[SSE /dsh-tts/stream]
+        SSE --> Worklet[AudioWorklet PCM Processor]
     end
 
     subgraph Cache [Performance Layer]
@@ -44,19 +49,23 @@ graph LR
 
     subgraph Fallback [TTS Provider Fallback Chain]
         LRU -->|Cache Miss| Chain{Active Chain}
-        Chain -->|Priority 1| P1[ElevenLabs / OpenAI / CosyVoice]
-        Chain -.->|On Rate Limit / 429| P2[EdgeTTS / Kokoro / Deepgram]
-        Chain -.->|Offline Fallback| P3[Local Piper / eSpeak NG]
+        Chain -->|Priority 1| P1[Kokoro / F5-TTS Local Offline]
+        Chain -.->|Cloud Neural| P2[ElevenLabs / OpenAI / CosyVoice]
+        Chain -.->|Free Cloud / Edge| P3[EdgeTTS / SiliconFlow]
+        Chain -.->|System Fallback| P4[Local Piper / eSpeak NG]
     end
 
-    subgraph Output [Delivery]
+    subgraph Output [Delivery & Integrations]
         P1 --> Store[Save to Cache]
         P2 --> Store
         P3 --> Store
+        P4 --> Store
         Store --> Play
+        Store --> Msg[Telegram / Discord via dsh-messenger-gateway]
     end
 
     style Input fill:#1e1e2e,stroke:#89b4fa,stroke-width:2px,color:#cdd6f4
+    style Stream fill:#181825,stroke:#89dceb,stroke-width:2px,color:#cdd6f4
     style Cache fill:#181825,stroke:#cba6f7,stroke-width:2px,color:#cdd6f4
     style Fallback fill:#11111b,stroke:#a6e3a1,stroke-width:2px,color:#cdd6f4
     style Output fill:#181825,stroke:#f38ba8,stroke-width:2px,color:#cdd6f4
@@ -64,10 +73,47 @@ graph LR
 
 ---
 
-## 🛠️ Complete Supported Providers Matrix (16 Backends)
+## 🚀 Key Features
+
+### 1. 📴 Offline Local Neural Engines (Kokoro CPU & F5-TTS GPU)
+* **Kokoro-82M (CPU)**: 82M-parameter lightweight neural model running locally on CPU via ONNX Runtime. High-speed synthesis with zero cloud dependencies.
+* **F5-TTS (GPU)**: Zero-shot diffusion transformer voice synthesis running on NVIDIA GPUs via a local inference daemon.
+* **ModelManager UI**: Direct manual installation in settings with real-time download progress bar, SHA-256 validation, and deletion. No silent or automatic multi-gigabyte downloads.
+
+### 2. ⚡ Real-Time Streaming Audio (< 300 ms Latency)
+* **AudioWorklet (`TTSWorklet`)**: High-performance Web Audio Worklet processor playing seamless Float32Array PCM chunks at 24 kHz without audible clicks or buffer underruns.
+* **Server-Sent Events (SSE)**: Dedicated `/dsh-tts/stream` route delivering synthesized chunks to connected browsers instantly.
+
+### 3. 🎙️ Voice Duplex & VAD Barge-In (with `@goodandready/dsh-voice`)
+* **Full-Duplex Conversation**: Automatic voice reply synthesis upon completion of speech dictation.
+* **VAD Barge-In**: Immediately mutes assistant speech playback when user voice activity is detected.
+* **Installation Guard**: If `@goodandready/dsh-voice` is not present, settings controls are disabled with an explicit instruction banner (`dsh plugin --profile web add @goodandready/dsh-voice`).
+
+### 4. 📚 Built-in IT Terminology Pronunciation Dictionary
+* **Pre-configured Lexicon**: Correct phonetic pronunciation for common technical abbreviations and developer terms:
+  - `SQL` $\rightarrow$ "сиквел"
+  - `Nginx` $\rightarrow$ "энджинкс"
+  - `Kubernetes` / `K8s` $\rightarrow$ "кубернетис"
+  - `Docker` $\rightarrow$ "докер", `API` $\rightarrow$ "апи", `JSON` $\rightarrow$ "джейсон", `YAML` $\rightarrow$ "ямл"
+  - `GUI`, `CLI`, `CI/CD`, `PR`, `Regex`, `OAuth`, `HTTP`, `HTTPS`, `CPU`, `GPU`, `RAM`
+* **Interactive UI Editor**: Edit rules, preview phonetic substitutions with the **▶ Listen** button, and populate standard IT terms with one click.
+
+### 5. 👥 Multi-Agent Personas & Subagent Voice Overrides
+* Assign distinct voices, providers, models, and audio chimes to individual subagents (e.g. `coder`, `reviewer`, `planner`, `tester`).
+* Automatically matches incoming assistant turn events (`session.agent` or `message.agent`).
+
+### 6. 💬 Messenger Voice Notes Integration (with `@goodandready/dsh-messenger-gateway`)
+* Generates voice audio for Telegram and Discord bot replies via `POST /dsh-tts/speak`.
+* Protective dependency check with installation hint when gateway plugin is missing.
+
+---
+
+## 🛠️ Complete Supported Providers Matrix (18 Backends)
 
 | Provider Key | Service Backend | Default Model | Default Voice | Credential Ref | Features & Notes |
 |---|---|---|---|---|---|
+| `kokoro` | Local Kokoro-82M ONNX | `hexgrad/Kokoro-82M` | `af_bella` | *None* | **100% offline CPU neural synthesis** |
+| `f5` | Local F5-TTS GPU Daemon | `F5-TTS` | Default | *None* | **High-fidelity GPU zero-shot voice synthesis** |
 | `elevenlabs` | ElevenLabs API | `eleven_multilingual_v2` | `Rachel` | `ELEVENLABS_API_KEY` | Ultra-realistic, emotional nuance |
 | `openai` | OpenAI Audio | `gpt-4o-mini-tts` / `tts-1` | `alloy` | `OPENAI_API_KEY` | High-quality industry standard |
 | `edge` | Microsoft Edge Online | `ru-RU-SvetlanaNeural` | `ru-RU-SvetlanaNeural` | *None* | **Free, high-fidelity neural TTS without API keys** |
@@ -90,47 +136,10 @@ graph LR
 ## 🧹 Smart Text Scrubbing & Formatting Engine
 
 Before text reaches speech synthesizers, `dsh-tts` intelligently sanitizes and filters the message so the assistant doesn't read out syntax noise:
-
-### 1. Spoken Cue Replacements
-Instead of reading 50 lines of Python or raw markdown tables, the plugin substitutes localized natural notices:
 * **Fenced Code Blocks**: Spoken as *"code block, N lines"* / *"блок кода, N строк"*.
 * **Markdown Tables**: Spoken as *"table, N rows"* / *"таблица, N строк"*.
 * **Summary Intros**: Spoken as *"Summary of the reply"* / *"Пересказ ответа"*.
-
-### 2. Narration Filters (`applyNarrationFilters`)
-* `skipCode` (`true` by default): Replaces code blocks with short spoken notices.
-* `skipActions`: Drops `*asterisk action*` blocks (e.g. `*smiles warmly*`) before synthesis.
-* `narrateQuotesOnly`: Speaks only text enclosed within quotation marks.
-* `removeRegex`: Custom global regex pattern to strip arbitrary user tags, citations, or timestamps.
-* `autoDetect`: Dynamically detects `ru` vs `en` per spoken sentence and switches voices automatically.
-
----
-
-## 💾 Disk LRU Cache (`createSpeechCache`)
-
-Repeated phrases (e.g. standard greetings, common explanations, or status notices) are automatically hashed by `(text, provider, model, voice)` and cached on disk.
-* **Instant Playback**: Zero network latency on cached hits.
-* **Cost Savings**: Zero repeat API charges.
-* **Configurable Quota**: `cacheMaxMb` (default `100` MB) evicts least-recently-used audio automatically.
-
----
-
-## 🎭 Role Overrides & Personas
-
-Assign distinct voices, SSML styles, and audio chimes to specific subagents or roles:
-
-```yaml
-dsh-tts:
-  speakReplies: true
-  roleOverrides:
-    coder:
-      provider: openai
-      voice: onyx
-    narrator:
-      provider: elevenlabs
-      voice: Rachel
-      ssmlStyle: cheerful
-```
+* **Narration Filters**: Skip asterisk actions (`*smiles*`), narrate quotes only, and apply custom regex removal.
 
 ---
 
@@ -147,30 +156,46 @@ dsh plugin --profile web add @goodandready/dsh-tts
 
 ## ⚙️ Configuration Recipes (`settings.yaml`)
 
-### Multi-Provider Fallback (Edge Free → OpenAI → Local Piper)
 ```yaml
 dsh-tts:
   speakReplies: true
-  skipCode: true
+  enableLocalEngines: true
+  kokoroEnabled: true
+  streamingEnabled: true
+  enableItDictionary: true
+  voiceDuplexEnabled: true
+  vadBargeIn: true
+  messengerTtsEnabled: true
   cache: true
   cacheMaxMb: 150
   autoDetect: true
   chain:
+    - provider: kokoro
     - provider: edge
       voice: ru-RU-SvetlanaNeural
-    - provider: siliconflow
-      model: FunAudioLLM/CosyVoice2-0.5B
     - provider: openai
       model: tts-1
       voice: alloy
-    - provider: piper
+  roles:
+    coder:
+      provider: openai
+      voice: onyx
+    reviewer:
+      provider: edge
+      voice: ru-RU-DmitryNeural
 ```
 
 ---
 
-## 🤖 HTTP Endpoints & Agent Tools
+## 🤖 HTTP Endpoints Reference
 
-* `POST /dsh-tts/speak` — `{ text, voice?, model? }` → Streams audio output (`audio/mpeg` or `audio/wav`).
+* `GET /dsh-tts/stream` — Real-time Server-Sent Events (SSE) audio streaming.
+* `POST /dsh-tts/speak` — `{ text, voice?, model? }` → Returns synthesized audio.
+* `POST /dsh-tts/preview` — `{ provider, model, voice, text? }` → Test voice playback in UI.
+* `GET /dsh-tts/models/status` — Reports local Kokoro and F5-TTS model installation states.
+* `POST /dsh-tts/models/install` — `{ engine: 'kokoro' | 'f5' }` → Starts HuggingFace model download.
+* `DELETE /dsh-tts/models/delete` — `{ engine: 'kokoro' | 'f5' }` → Removes local model files.
+* `GET /dsh-tts/integrations` — Status of sibling plugins (`dsh-voice`, `dsh-messenger-gateway`).
 * `GET /dsh-tts/status` — Returns active chain state, cache statistics, and engine readiness.
 
 ---
