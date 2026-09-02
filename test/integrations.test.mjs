@@ -26,3 +26,20 @@ test('lib/client.js contains VoiceDuplexEditor with disabled toggle and warning 
   assert.match(src, /addSubagentRole/, 'must support adding subagent personas')
   assert.match(src, /newSubagentRole/, 'must support typing subagent name')
 })
+
+test('lib/index.js includes messengerTtsEnabled in Config', () => {
+  const srcPath = path.join(path.dirname(fileURLToPath(import.meta.url)), '../lib/index.js')
+  const src = readFileSync(srcPath, 'utf8')
+  assert.match(src, /messengerTtsEnabled/, 'Config must include messengerTtsEnabled')
+  assert.match(src, /@goodandready\/dsh-messenger-gateway/, 'integrations must reference dsh-messenger-gateway')
+})
+
+test('lib/client.js contains MessengerIntegrationEditor with disabled toggle and warning hint when uninstalled', () => {
+  const srcPath = path.join(path.dirname(fileURLToPath(import.meta.url)), '../lib/client.js')
+  const src = readFileSync(srcPath, 'utf8')
+
+  assert.match(src, /function MessengerIntegrationEditor/, 'MessengerIntegrationEditor must be defined')
+  assert.match(src, /dsh plugin --profile web add @goodandready\/dsh-messenger-gateway/, 'must show messenger install command')
+  assert.match(src, /messengerNotInstalledTitle/, 'must have messenger warning title')
+  assert.match(src, /messengerTtsEnabled/, 'must have messengerTtsEnabled toggle')
+})
