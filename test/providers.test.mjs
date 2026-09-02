@@ -125,4 +125,21 @@ test('MiniMax без утилиты отказывает понятно, а не
 test('оба провайдера объявлены в списке', () => {
   assert.ok(PROVIDER_KEYS.includes('mimo'))
   assert.ok(PROVIDER_KEYS.includes('minimax'))
+  assert.ok(PROVIDER_KEYS.includes('kokoro'))
+  assert.ok(PROVIDER_KEYS.includes('f5'))
+})
+
+test('makeProviders includes kokoro and f5', async () => {
+  const deps = {
+    resolveKey: async () => '',
+    fetchImpl: async () => ({ ok: true }),
+    cfg: cfg(),
+  }
+  const providers = makeProviders(deps, { text: 'test speech', lang: 'ru', models: {}, voices: {} })
+  assert.equal(typeof providers.kokoro, 'function')
+  assert.equal(typeof providers.f5, 'function')
+  const kOut = await providers.kokoro()
+  assert.equal(kOut.ok, true)
+  assert.equal(kOut.provider, 'kokoro')
+  assert.equal(kOut.mime, 'audio/wav')
 })

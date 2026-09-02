@@ -139,6 +139,11 @@ test('narration filters: quotes only', () => {
   assert.equal(out, '«Говорю это»')
 })
 
+test('narration filters: quotes only returns empty when no quotes exist', () => {
+  const out = applyNarrationFilters('Текст вообще без кавычек.', { narrateQuotesOnly: true })
+  assert.equal(out, '')
+})
+
 test('narration filters: skip asterisk actions', () => {
   const out = applyNarrationFilters('Привет * машет рукой * и уходит.', { skipActions: true })
   assert.equal(out.includes('машет'), false)

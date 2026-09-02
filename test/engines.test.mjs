@@ -61,7 +61,23 @@ test('ModelManager handles install, status, and delete with mocked fetch', async
     const deleted = await mm.deleteModel('kokoro')
     assert.equal(deleted.installed, false)
     assert.equal(deleted.sizeBytes, 0)
+
+    // Security check: path traversal in deleteModel must throw
+    await assert.rejects(async () => {
+      await mm.deleteModel('../../')
+    }, /Unknown engine/)
   } finally {
     await fs.promises.rm(tmpRoot, { recursive: true, force: true }).catch(() => {})
   }
+})
+
+test('kokoro synthesizes valid WAV audio format', async () => {
+  const e = new KokoroEngine({ modelPath: 'test/fixtures/kokoro-tiny.onnx' })
+  const wav = await e.synthesizeWav('hello test', 'af_bella')
+  assert.ok(Buffer.isBuffer(wav))
+  assert.ok(wav.length > 44)
+  assert.equal(wav.toString('utf8', 0, 4), 'RIFF')
+  assert.equal(wav.toString('utf8', 8, 12), 'WAVE')
+  assert.equal(wav.toString('utf8', 12, 16), 'fmt ')
+  assert.equal(wav.readUInt32LE(24), 24000, 'sample rate must be 24000')
 })

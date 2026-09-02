@@ -12,9 +12,15 @@ import {
 test('cloud providers need a key; local ones do not', () => {
   assert.equal(needsApiKey('deepgram'), true)
   assert.equal(needsApiKey('openai'), true)
+  assert.equal(needsApiKey('siliconflow'), true)
+  assert.equal(needsApiKey('deepinfra'), true)
+  assert.equal(needsApiKey('fireworks'), true)
+  assert.equal(needsApiKey('mimo'), true)
   assert.equal(needsApiKey('edge'), false)
   assert.equal(needsApiKey('piper'), false)
   assert.equal(needsApiKey('espeak'), false)
+  assert.equal(needsApiKey('kokoro'), false)
+  assert.equal(needsApiKey('f5'), false)
 })
 
 test('key env names are placeholders, not values', () => {
