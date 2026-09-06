@@ -31,6 +31,7 @@ test('client factory returns apply after CommonJS shim', () => {
   })
   assert.equal(typeof exported.apply, 'function')
   assert.ok(Array.isArray(exported.inject))
+  assert.ok(exported.inject.includes('settingsScope'), 'client module must inject settingsScope')
 })
 
 
@@ -139,4 +140,17 @@ test('док чтения не держит подписи в коде', () => {
 
   assert.match(src, /locale: NS,/, 'без locale в слоте перевод не дойдёт до компонента')
   assert.match(src, /label: \(\) => fallbackDockText\('dockLabel'\)/, 'подпись слота — через привязку')
+})
+test('server module exports scoped name @goodandready/dsh-tts', () => {
+  const srcPath = path.join(path.dirname(fileURLToPath(import.meta.url)), '../lib/index.js')
+  const src = readFileSync(srcPath, 'utf8')
+  assert.match(src, /export const name = ['"]@goodandready\/dsh-tts['"]/, 'server module must export scoped name')
+})
+
+test('client source gates writable on ready snapshot status', () => {
+  const srcPath = path.join(path.dirname(fileURLToPath(import.meta.url)), '../lib/client.js')
+  const src = readFileSync(srcPath, 'utf8')
+  assert.equal(src.includes('const writable = true'), false, 'writable must not be hardcoded true')
+  assert.match(src, /snap\.status === 'ready'/, 'must check snap.status ready')
+  assert.match(src, /writable = !scope \? true : \(ready && snap\.writable !== false\)/, 'writable must gate on ready and snap.writable')
 })
