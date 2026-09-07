@@ -1,3 +1,4 @@
+import fs from 'node:fs'
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { makeProviders, PROVIDER_KEYS } from '../lib/providers.js'
@@ -129,7 +130,7 @@ test('оба провайдера объявлены в списке', () => {
   assert.ok(PROVIDER_KEYS.includes('f5'))
 })
 
-test('makeProviders includes kokoro and f5', async () => {
+test('makeProviders includes kokoro and f5 with honest status when uninstalled', async () => {
   const deps = {
     resolveKey: async () => '',
     fetchImpl: async () => ({ ok: true }),
@@ -139,7 +140,24 @@ test('makeProviders includes kokoro and f5', async () => {
   assert.equal(typeof providers.kokoro, 'function')
   assert.equal(typeof providers.f5, 'function')
   const kOut = await providers.kokoro()
-  assert.equal(kOut.ok, true)
+  assert.equal(kOut.ok, false)
   assert.equal(kOut.provider, 'kokoro')
-  assert.equal(kOut.mime, 'audio/wav')
+  assert.match(kOut.reason, /Kokoro ONNX model not installed/)
+
+  // If model is present, kokoro synthesizes wav
+  const tmpModel = 'test/fixtures_tmp_kokoro.onnx'
+  fs.writeFileSync(tmpModel, 'fake onnx data')
+  try {
+    const installedDeps = {
+      ...deps,
+      cfg: { ...cfg(), kokoroModelPath: tmpModel },
+    }
+    const installedProviders = makeProviders(installedDeps, { text: 'test speech', lang: 'ru', models: {}, voices: {} })
+    const kInstalled = await installedProviders.kokoro()
+    assert.equal(kInstalled.ok, true)
+    assert.equal(kInstalled.provider, 'kokoro')
+    assert.equal(kInstalled.mime, 'audio/wav')
+  } finally {
+    fs.unlinkSync(tmpModel)
+  }
 })
