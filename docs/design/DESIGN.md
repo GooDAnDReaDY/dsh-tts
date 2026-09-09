@@ -92,3 +92,8 @@
 - 2026-09-02 — Интеграция с Kokoro и F5-TTS выполняется внутри плагина с потоковым скачиванием весов и WAV-кодировщиком.
 - 2026-09-06 — Статус снимка настроек `unavailable` блокирует редактирование формы (`writable = false`) для предотвращения рассинхронизации состояния с сервером.
 - 2026-09-07 — Релиз v0.3.23: защита сокращений/чисел от разрыва предложений (lib/text.js), in-flight deduplication синтеза для устранения Cache Stampede, увеличение cloud таймаутов до 10 сек (lib/providers.js), бесшовный gapless prebuffering в веб-плеере (lib/client.js), удаление мертвых заглушек router.js и worklet.js, честная ошибка локальных движков Kokoro/F5 при отсутствии онлайнового рантайма вместо синтетической синусоиды 440 Гц.
+
+- 2026-09-09 — Local Kokoro/F5 neural inference is not bundled; providers fail with a clear reason and never emit synthetic tones. Marketing/docs must match. Revisit when a supported runtime is wired.
+
+## Superseded notes
+Earlier free-form notes under docs/superpowers/ are retired; this file and docs/plans/ are canonical.

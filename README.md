@@ -29,7 +29,7 @@
 
 **`dsh-tts`** provides robust, lifelike spoken voice synthesis for assistant replies in the **DeepSeek Harness** Web UI. When **Speak agent replies** is enabled, each finished assistant turn or real-time streaming chunk is synthesized on the host and streamed directly to the browser.
 
-API keys never reach client browsers: synthesis is executed entirely on the host backend across **independent multi-provider fallback chains**, including completely offline neural models (Kokoro-82M and F5-TTS).
+API keys never reach client browsers: synthesis is executed entirely on the host backend across **independent multi-provider fallback chains**, including local system engines (Edge TTS, Piper, eSpeak). Kokoro-82M and F5-TTS weights can be downloaded for future runtime support, but neural inference is **not bundled** in this package — those providers fail honestly and the chain continues.
 
 ```mermaid
 graph LR
@@ -76,8 +76,8 @@ graph LR
 ## 🚀 Key Features
 
 ### 1. 📴 Offline Local Neural Engines (Kokoro CPU & F5-TTS GPU)
-* **Kokoro-82M (CPU)**: 82M-parameter lightweight neural model running locally on CPU via ONNX Runtime. High-speed synthesis with zero cloud dependencies.
-* **F5-TTS (GPU)**: Zero-shot diffusion transformer voice synthesis running on NVIDIA GPUs via a local inference daemon.
+* **Kokoro-82M (CPU)**: model weights can be downloaded, but ONNX Runtime inference is not bundled; the provider reports unavailable. High-speed synthesis with zero cloud dependencies.
+* **F5-TTS (GPU)**: control daemon ping only; GPU inference is not bundled; the provider reports unavailable.
 * **ModelManager UI**: Direct manual installation in settings with real-time download progress bar, SHA-256 validation, and deletion. No silent or automatic multi-gigabyte downloads.
 
 ### 2. ⚡ Real-Time Streaming Audio (< 300 ms Latency)
@@ -112,8 +112,8 @@ graph LR
 
 | Provider Key | Service Backend | Default Model | Default Voice | Credential Ref | Features & Notes |
 |---|---|---|---|---|---|
-| `kokoro` | Local Kokoro-82M ONNX | `hexgrad/Kokoro-82M` | `af_bella` | *None* | **100% offline CPU neural synthesis** |
-| `f5` | Local F5-TTS GPU Daemon | `F5-TTS` | Default | *None* | **High-fidelity GPU zero-shot voice synthesis** |
+| `kokoro` | Local Kokoro-82M ONNX | `hexgrad/Kokoro-82M` | `af_bella` | *None* | Weights downloadable; **ONNX inference not bundled** — fails honestly |
+| `f5` | Local F5-TTS GPU Daemon | `F5-TTS` | Default | *None* | Daemon ping only; **GPU inference not bundled** — fails honestly |
 | `elevenlabs` | ElevenLabs API | `eleven_multilingual_v2` | `Rachel` | `ELEVENLABS_API_KEY` | Ultra-realistic, emotional nuance |
 | `openai` | OpenAI Audio | `gpt-4o-mini-tts` / `tts-1` | `alloy` | `OPENAI_API_KEY` | High-quality industry standard |
 | `edge` | Microsoft Edge Online | `ru-RU-SvetlanaNeural` | `ru-RU-SvetlanaNeural` | *None* | **Free, high-fidelity neural TTS without API keys** |

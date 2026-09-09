@@ -18,11 +18,11 @@ test('handles string content', () => {
 
 // ------------------------------------------------------- нарезка по фразам
 
-test('короткий текст остаётся одним куском', () => {
+test('short text stays a single chunk', () => {
   assert.deepEqual(splitSentences('Готово.', 320), ['Готово.'])
 })
 
-test('режет по границам предложений, а не посреди слова', () => {
+test('splits on sentence boundaries, not mid-word', () => {
   const pieces = splitSentences('Первое предложение достаточной длины для отдельного куска. Второе предложение тоже вполне себе длинное. Третье.', 60)
   assert.ok(pieces.length >= 2)
   for (const piece of pieces) assert.ok(piece.length <= 60, 'кусок длиннее предела: ' + piece)
@@ -30,12 +30,12 @@ test('режет по границам предложений, а не поср�
     'Первое предложение достаточной длины для отдельного куска. Второе предложение тоже вполне себе длинное. Третье.')
 })
 
-test('огрызки прилипают к следующему, чтобы не звучать рвано', () => {
+test('fragments attach to the next piece so speech does not glitch', () => {
   const pieces = splitSentences('Да. Нет. Именно так и обстоит дело в данном случае.', 320)
   assert.equal(pieces.length, 1)
 })
 
-test('длинную фразу без точек всё равно режет по словам', () => {
+test('long phrase without periods is still split on words', () => {
   const long = 'слово '.repeat(80).trim()
   const pieces = splitSentences(long, 100)
   assert.ok(pieces.length > 1)
@@ -46,7 +46,7 @@ test('длинную фразу без точек всё равно режет �
   assert.equal(pieces.join(' '), long)
 })
 
-test('пустой текст не даёт пустых кусков', () => {
+test('empty text yields no empty chunks', () => {
   assert.deepEqual(splitSentences('   ', 320), [])
   assert.deepEqual(splitSentences('', 320), [])
 })

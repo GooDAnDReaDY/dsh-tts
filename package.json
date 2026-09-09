@@ -13,9 +13,12 @@
   },
   "files": [
     "lib/",
+    "scripts/",
     "cordis.patch.yml",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "README.ru.md",
+    "README.zh.md"
   ],
   "keywords": [
     "dsh",
