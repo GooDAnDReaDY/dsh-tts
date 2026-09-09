@@ -1,33 +1,49 @@
 # dsh-tts
 
-Text-to-speech plugin for the DeepSeek Harness Web UI. Speaks finished agent replies through a provider fallback chain (cloud + local system engines). Published on npm as @goodandready/dsh-tts.
+Text-to-speech for the DeepSeek Harness Web UI. Speaks agent replies through a host-side provider fallback chain. npm: `@goodandready/dsh-tts`.
 
-- Status: active, working toward v0.4.0 (package version in package.json is source of truth)
+- Package version: see `package.json` (source of truth)
 - Install: `dsh plugin --profile web add @goodandready/dsh-tts`
 - Tests: `npm test` (`node --test test/*.test.mjs`)
-- Pack size gate: `npm pack --dry-run` — every file must stay under 262144 bytes
+- Pack gate: `npm pack --dry-run` — every file `< 262144` bytes
 
-## Offline engines (honest status)
+## Honest offline status
 
-- Kokoro / F5 weights can be downloaded, but **ONNX/GPU inference is not bundled** in this package.
-- Those providers fail with a clear reason and the chain falls through to Edge / Piper / eSpeak / cloud.
-- Do not market local neural synthesis until a supported runtime is wired and tested.
+| Engine | Weights download | Speech in this package |
+|---|---|---|
+| Edge TTS | n/a (CLI) | yes, if `edge-tts` is installed |
+| Piper | user ONNX path | yes, if `piper` + model configured |
+| eSpeak NG | n/a | yes, if `espeak-ng` is installed |
+| Kokoro-82M | yes | **no** — inference not bundled |
+| F5-TTS | yes | **no** — inference not bundled |
+
+## Providers (18)
+
+`kokoro`, `f5`, `openai`, `elevenlabs`, `google`, `azure`, `groq`, `deepgram`, `openrouter`, `siliconflow`, `deepinfra`, `fireworks`, `mimo`, `custom`, `edge`, `piper`, `espeak`, `minimax`
+
+## HTTP routes
+
+`/dsh-tts/status`, `/stream`, `/pending`, `/speak`, `/preview`, `/config`, `/credential`, `/stats`, `/cache`, `/integrations`, `/models/status`, `/models/install`, `/models/delete`
 
 ## Navigation
 
-- README.md / README.ru.md / README.zh.md — install, configuration, provider table, HTTP routes
-- AGENTS.md — project rules for agents
-- docs/design/DESIGN.md — design contract
-- docs/architecture/2026-08-20-dsh-tts-design.md — design baseline
-- docs/plans/2026-08-20-dsh-tts.md — original implementation plan
+- README.md / README.ru.md / README.zh.md — install, config, provider matrix, routes
+- AGENTS.md — agent rules
+- docs/design/DESIGN.md — UX contract
+- docs/architecture/2026-08-20-dsh-tts-design.md — baseline
+- docs/testing/test-matrix.md — verification commands
+- docs/deployment/0.4.0-checklist.md — release gate checklist
 
-## Module map (host)
+## Module map
 
-- lib/index.js — apply, Config, synthesis orchestration, tools
-- lib/routes.js — all /dsh-tts HTTP routes
-- lib/providers.js — provider implementations
-- lib/text.js — scrubbing, pronunciation, sentence split
-- lib/cache.js — disk LRU speech cache
-- lib/keys.js — credential refs and secret stripping
-- lib/client.js — browser factory (player, settings card, dock)
-- lib/engines/* — local engine wrappers and model manager
+| Path | Role |
+|---|---|
+| lib/index.js | apply, Config, synthesis, tools |
+| lib/routes.js | HTTP routes |
+| lib/providers.js | provider implementations |
+| lib/text.js | scrubbing, pronunciation, split |
+| lib/cache.js | disk LRU cache |
+| lib/keys.js | credential refs / secret strip |
+| lib/client.js | browser factory (single ModuleLoader entry) |
+| lib/engines/* | local engine wrappers + model manager |
+| scripts/f5_daemon.py | F5 ping-only control stub |

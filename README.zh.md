@@ -2,7 +2,7 @@
 
 <div align="center">
 
-<h3>DeepSeek Harness 多引擎语音合成：本地离线神经网络引擎、低延迟流式音频（<300ms）、IT术语词典与即时通讯集成</h3>
+<h3>DeepSeek Harness 多引擎语音合成：云端与系统离线引擎、流式音频、IT 术语词典与即时通讯集成</h3>
 
 <p align="center">
   <a href="https://www.npmjs.com/package/@goodandready/dsh-tts"><img src="https://img.shields.io/npm/v/@goodandready/dsh-tts.svg?style=for-the-badge&color=6366f1&labelColor=1e1b4b" alt="npm version"></a>
@@ -29,7 +29,7 @@
 
 **`dsh-tts`** 为 **DeepSeek Harness** Web 界面提供高保真智能体回复语音朗读服务。开启 **朗读智能体回复** 后，每条生成的助手回复或实时流式片段均由服务端合成并即时推流至浏览器播放。
 
-API 密钥绝不暴露给前端：音频合成全程在服务端通过**多服务商独立备用链**执行，包括完全离线的本地神经网络模型（Kokoro-82M 和 F5-TTS）。
+API 密钥绝不暴露给前端：音频合成全程在服务端通过**多服务商独立备用链**执行，包括系统离线引擎（Edge TTS、Piper、eSpeak）。Kokoro/F5 仅可下载权重，**推理未捆绑**。
 
 ```mermaid
 graph LR
@@ -49,8 +49,8 @@ graph LR
 
     subgraph Fallback [TTS 引擎备用链]
         LRU -->|未命中| Chain{生效备用链}
-        Chain -->|首选| P1[Kokoro / F5-TTS 本地离线]
-        Chain -.->|云端神经网络| P2[ElevenLabs / OpenAI / CosyVoice]
+        Chain -->|离线| P1[Edge TTS / Piper / eSpeak]
+        Chain -.->|云端| P2[OpenAI / ElevenLabs / Google / Azure / Groq]
         Chain -.->|免费云端| P3[EdgeTTS / SiliconFlow]
         Chain -.->|系统兜底| P4[本地 Piper / eSpeak NG]
     end
@@ -75,9 +75,9 @@ graph LR
 
 ## 🚀 核心功能
 
-### 1. 📴 完全离线本地神经网络引擎（Kokoro CPU 与 F5-TTS GPU）
-* **Kokoro-82M (CPU)**：8200万参数轻量级神经网络模型，通过 ONNX Runtime 在 CPU 上本地运行，零云端依赖。
-* **F5-TTS (GPU)**：零样本扩散 Transformer 语音合成，通过本地推理守护进程运行于 NVIDIA GPU。
+### 1. 📴 离线系统引擎与诚实的神经引擎状态
+* **Edge TTS / Piper / eSpeak**：可用的离线/系统合成，无需云 API Key。
+* **Kokoro-82M / F5-TTS**：仅权重下载与状态展示。**推理未捆绑在本包中**，provider 会明确失败并继续 fallback。
 * **ModelManager 管理界面**：在设置中手动安装模型，实时显示下载进度条、SHA-256 校验和一键删除。无任何静默或自动下载。
 
 ### 2. ⚡ 实时流式音频播放（延迟 < 300ms）
@@ -107,8 +107,8 @@ graph LR
 
 | 服务商 Key | 对应引擎 | 默认模型 | 默认发音人 | 凭证变量名 | 说明与亮点 |
 |---|---|---|---|---|---|
-| `kokoro` | 本地 Kokoro-82M ONNX | `hexgrad/Kokoro-82M` | `af_bella` | *无需密钥* | **100% 离线 CPU 神经网络合成** |
-| `f5` | 本地 F5-TTS GPU 守护进程 | `F5-TTS` | 默认 | *无需密钥* | **高保真 GPU 零样本语音合成** |
+| `kokoro` | Kokoro 权重（ONNX） | `hexgrad/Kokoro-82M` | `af_bella` | *无需密钥* | 可下载权重；**推理未捆绑** — 明确失败 |
+| `f5` | F5 守护进程（ping） | `F5-TTS` | 默认 | *无需密钥* | 仅 ping；**GPU 推理未捆绑** — 明确失败 |
 | `elevenlabs` | ElevenLabs API | `eleven_multilingual_v2` | `Rachel` | `ELEVENLABS_API_KEY` | 极致拟人情感音色 |
 | `openai` | OpenAI Audio | `gpt-4o-mini-tts` / `tts-1` | `alloy` | `OPENAI_API_KEY` | 经典高清发音 |
 | `edge` | 微软 Edge 在线 | `zh-CN-XiaoxiaoNeural` | `zh-CN-XiaoxiaoNeural` | *无需密钥* | **免费免 Key 高保真神经网络语音** |
@@ -177,7 +177,7 @@ dsh-tts:
 * `GET /dsh-tts/stream` — 实时 SSE 音频流推送。
 * `POST /dsh-tts/speak` — `{ text, voice?, model? }` → 返回合成音频。
 * `POST /dsh-tts/preview` — `{ provider, model, voice, text? }` → UI 中试听语音。
-* `GET /dsh-tts/models/status` — 查询本地模型安装状态（Kokoro、F5-TTS）。
+* `GET /dsh-tts/models/status` — 查询 Kokoro/F5 权重下载状态（推理未捆绑）。
 * `POST /dsh-tts/models/install` — `{ engine: 'kokoro' | 'f5' }` → 启动模型下载。
 * `DELETE /dsh-tts/models/delete` — `{ engine: 'kokoro' | 'f5' }` → 删除本地模型。
 * `GET /dsh-tts/integrations` — 查询关联插件状态（`dsh-voice`、`dsh-messenger-gateway`）。

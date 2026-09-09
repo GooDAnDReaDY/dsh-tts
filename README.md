@@ -49,10 +49,10 @@ graph LR
 
     subgraph Fallback [TTS Provider Fallback Chain]
         LRU -->|Cache Miss| Chain{Active Chain}
-        Chain -->|Priority 1| P1[Kokoro / F5-TTS Local Offline]
-        Chain -.->|Cloud Neural| P2[ElevenLabs / OpenAI / CosyVoice]
-        Chain -.->|Free Cloud / Edge| P3[EdgeTTS / SiliconFlow]
-        Chain -.->|System Fallback| P4[Local Piper / eSpeak NG]
+        Chain -->|Offline| P1[Edge TTS / Piper / eSpeak]
+        Chain -.->|Cloud Neural| P2[OpenAI / ElevenLabs / Google / Azure / Groq]
+        Chain -.->|OpenAI-compatible| P3[SiliconFlow / DeepInfra / Fireworks / OpenRouter]
+        Chain -.->|Other| P4[MiMo / MiniMax / Custom]
     end
 
     subgraph Output [Delivery & Integrations]
@@ -75,9 +75,9 @@ graph LR
 
 ## 🚀 Key Features
 
-### 1. 📴 Offline Local Neural Engines (Kokoro CPU & F5-TTS GPU)
-* **Kokoro-82M (CPU)**: model weights can be downloaded, but ONNX Runtime inference is not bundled; the provider reports unavailable. High-speed synthesis with zero cloud dependencies.
-* **F5-TTS (GPU)**: control daemon ping only; GPU inference is not bundled; the provider reports unavailable.
+### 1. 📴 Offline system engines + optional future neural runtimes
+* **Edge TTS / Piper / eSpeak**: fully offline or free local/system synthesis without cloud API keys (Edge needs the `edge-tts` CLI).
+* **Kokoro-82M / F5-TTS**: weight download and status UI only. **Neural inference is not bundled** in this package — those providers fail with a clear reason and the fallback chain continues. Do not enable them expecting speech until a supported runtime is wired.
 * **ModelManager UI**: Direct manual installation in settings with real-time download progress bar, SHA-256 validation, and deletion. No silent or automatic multi-gigabyte downloads.
 
 ### 2. ⚡ Real-Time Streaming Audio (< 300 ms Latency)
@@ -170,8 +170,8 @@ dsh-tts:
   cacheMaxMb: 150
   autoDetect: true
   chain:
-    - provider: kokoro
     - provider: edge
+    - provider: espeak
       voice: ru-RU-SvetlanaNeural
     - provider: openai
       model: tts-1
@@ -192,7 +192,7 @@ dsh-tts:
 * `GET /dsh-tts/stream` — Real-time Server-Sent Events (SSE) audio streaming.
 * `POST /dsh-tts/speak` — `{ text, voice?, model? }` → Returns synthesized audio.
 * `POST /dsh-tts/preview` — `{ provider, model, voice, text? }` → Test voice playback in UI.
-* `GET /dsh-tts/models/status` — Reports local Kokoro and F5-TTS model installation states.
+* `GET /dsh-tts/models/status` — Reports Kokoro/F5 weight installation states (download only; inference not bundled).
 * `POST /dsh-tts/models/install` — `{ engine: 'kokoro' | 'f5' }` → Starts HuggingFace model download.
 * `DELETE /dsh-tts/models/delete` — `{ engine: 'kokoro' | 'f5' }` → Removes local model files.
 * `GET /dsh-tts/integrations` — Status of sibling plugins (`dsh-voice`, `dsh-messenger-gateway`).
