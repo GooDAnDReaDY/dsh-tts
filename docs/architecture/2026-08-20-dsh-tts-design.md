@@ -18,3 +18,10 @@ Package `@goodandready/dsh-tts`. README uses placeholders only.
 ## Credentials
 
 Cloud API keys are entered on the Speech card (write-only password + Configured badge). The host writes them with credentials.set under the provider env name. Plugin settings store chain/models only. GET config returns configured/writable/ref, never the value.
+
+## 2026-09-09 update (quality block → 0.4.0)
+
+- Host apply split: `lib/routes.js` (HTTP), `lib/stream-hub.js` (SSE), `lib/http-util.js`.
+- Local Kokoro/F5: weight manager + honest failure; no bundled neural inference.
+- Integrations detect peers only via `webServer.hasRoute`.
+- Client remains a single ModuleLoader factory (`lib/client.js`).

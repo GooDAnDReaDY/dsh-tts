@@ -2,7 +2,7 @@
 
 <div align="center">
 
-<h3>Многопровайдерная озвучка ответов агента с локальными нейродвижками, потоковым звуком (<300 мс), IT-словарём и интеграцией с мессенджерами для DeepSeek Harness</h3>
+<h3>Многопровайдерная озвучка ответов агента: облачные и системные offline-движки, потоковый звук, IT-словарь и интеграция с мессенджерами для DeepSeek Harness</h3>
 
 <p align="center">
   <a href="https://www.npmjs.com/package/@goodandready/dsh-tts"><img src="https://img.shields.io/npm/v/@goodandready/dsh-tts.svg?style=for-the-badge&color=6366f1&labelColor=1e1b4b" alt="npm version"></a>
@@ -27,9 +27,12 @@
 
 ## ⚡ Обзор
 
+> **Честно про локальные нейросети:** Kokoro/F5 — только статус и загрузка весов. Inference **не входит** в пакет; эти провайдеры падают с понятной причиной, цепочка идёт дальше. Рабочий offline: Edge TTS, Piper, eSpeak.
+
+
 **`dsh-tts`** обеспечивает качественное голосовое озвучивание ответов ассистента в веб-интерфейсе **DeepSeek Harness**. При включённой опции **«Читать ответы агента»**, каждая готовая реплика или потоковый фрагмент синтезируется на хосте и мгновенно воспроизводится в браузере.
 
-API-ключи никогда не передаются в браузер: синтез аудио выполняется на стороне хоста через **независимые цепочки отказоустойчивости (фолбеков)**, включая полностью локальные оффлайн-нейросети (Kokoro-82M и F5-TTS).
+API-ключи никогда не передаются в браузер: синтез аудио выполняется на стороне хоста через **независимые цепочки отказоустойчивости (фолбеков)**, включая системные offline-движки (Edge TTS, Piper, eSpeak). Kokoro/F5 — только загрузка весов; inference не входит в пакет.
 
 ```mermaid
 graph LR
@@ -49,8 +52,8 @@ graph LR
 
     subgraph Fallback [Цепочка фолбеков TTS]
         LRU -->|Промах кэша| Chain{Активная цепочка}
-        Chain -->|1-й приоритет| P1[Kokoro / F5-TTS Локально]
-        Chain -.->|Облачные нейросети| P2[ElevenLabs / OpenAI / CosyVoice]
+        Chain -->|Offline| P1[Edge TTS / Piper / eSpeak]
+        Chain -.->|Cloud| P2[OpenAI / ElevenLabs / Google / Azure / Groq]
         Chain -.->|Бесплатные облака| P3[EdgeTTS / SiliconFlow]
         Chain -.->|Системный фолбек| P4[Локальный Piper / eSpeak NG]
     end
@@ -75,9 +78,9 @@ graph LR
 
 ## 🚀 Ключевые возможности
 
-### 1. 📴 Полностью локальные оффлайн-движки (Kokoro CPU и F5-TTS GPU)
-* **Kokoro-82M (CPU)**: Компактная нейросетевая модель (82 млн параметров), работающая локально на CPU через ONNX Runtime. Быстрый синтез без внешних API и интернета.
-* **F5-TTS (GPU)**: Диффузионный трансформер нулевого выстрела (zero-shot) на видеокартах NVIDIA через выделенный локальный демон инференса.
+### 1. 📴 Offline-системные движки и честный статус нейросетей
+* **Edge TTS / Piper / eSpeak**: рабочий offline/системный синтез без облачных API-ключей.
+* **Kokoro-82M / F5-TTS**: только UI и загрузка весов. **Inference не входит в пакет** — провайдер падает с понятной причиной, цепочка идёт дальше.
 * **ModelManager в UI**: Ручная загрузка моделей прямо из настроек плагина с отображением процентов и прогресс-бара, проверкой SHA-256 и кнопкой удаления. Никаких скрытых или автозагрузок гигабайтных весов.
 
 ### 2. ⚡ Потоковое воспроизведение звука с задержкой < 300 мс
@@ -112,8 +115,8 @@ graph LR
 
 | Ключ провайдера | Сервис | Модель по умолчанию | Голос по умолчанию | Имя ключа (credential) | Особенности |
 |---|---|---|---|---|---|
-| `kokoro` | Локальный Kokoro-82M ONNX | `hexgrad/Kokoro-82M` | `af_bella` | *Не требуется* | **100% локальный нейросинтез на CPU** |
-| `f5` | Локальный F5-TTS GPU | `F5-TTS` | По умолчанию | *Не требуется* | **Качественный zero-shot синтез на NVIDIA GPU** |
+| `kokoro` | Веса Kokoro-82M (ONNX) | `hexgrad/Kokoro-82M` | `af_bella` | *Не требуется* | Веса скачать можно; **inference не bundled** — честный fail |
+| `f5` | Демон F5 (ping) | `F5-TTS` | По умолчанию | *Не требуется* | Только ping; **GPU inference не bundled** — честный fail |
 | `elevenlabs` | ElevenLabs API | `eleven_multilingual_v2` | `Rachel` | `ELEVENLABS_API_KEY` | Реалистичный эмоциональный синтез |
 | `openai` | OpenAI Audio | `gpt-4o-mini-tts` / `tts-1` | `alloy` | `OPENAI_API_KEY` | Эталонное качество индустрии |
 | `edge` | Microsoft Edge Online | `ru-RU-SvetlanaNeural` | `ru-RU-SvetlanaNeural` | *Не требуется* | **Бесплатный нейросинтез без API-ключей** |
@@ -182,7 +185,7 @@ dsh-tts:
 * `GET /dsh-tts/stream` — Потоковая передача аудио по SSE в реальном времени.
 * `POST /dsh-tts/speak` — `{ text, voice?, model? }` → Возвращает аудиофайл для воспроизведения.
 * `POST /dsh-tts/preview` — `{ provider, model, voice, text? }` → Тестовое прослушивание голоса в UI.
-* `GET /dsh-tts/models/status` — Статус установленных локальных моделей (Kokoro, F5-TTS).
+* `GET /dsh-tts/models/status` — Статус загрузки весов Kokoro/F5 (inference не в комплекте).
 * `POST /dsh-tts/models/install` — `{ engine: 'kokoro' | 'f5' }` → Запуск загрузки модели с HuggingFace.
 * `DELETE /dsh-tts/models/delete` — `{ engine: 'kokoro' | 'f5' }` → Удаление локальной модели.
 * `GET /dsh-tts/integrations` — Проверка статуса связанных плагинов (`dsh-voice`, `dsh-messenger-gateway`).
