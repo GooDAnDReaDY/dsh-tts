@@ -1,0 +1,20 @@
+name: Tech debt
+description: Maintainability, tests, structure
+labels: ["type/tech-debt", "status/confirmed"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What is suboptimal
+    validations:
+      required: true
+  - type: textarea
+    id: impact
+    attributes:
+      label: Why it matters
+    validations:
+      required: true
+  - type: textarea
+    id: plan
+    attributes:
+      label: Proposed direction
