@@ -124,7 +124,7 @@ test('polling runs under an effect scope and owns its cleaner', async () => {
 // Проверяем по исходнику: подпись слота рисует ядро, тултипы — компонент,
 // и оба пути молчат при поломке — русская строка просто остаётся русской
 // для англоязычного читателя, и никто об этом не узнает.
-test('док чтения не держит подписи в коде', () => {
+test('speech dock does not hardcode labels in source', () => {
   const srcPath = path.join(path.dirname(fileURLToPath(import.meta.url)), '../lib/client.js')
   const src = readFileSync(srcPath, 'utf8')
 
