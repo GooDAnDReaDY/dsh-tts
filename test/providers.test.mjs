@@ -69,7 +69,7 @@ function mimoDeps(fetchImpl, over = {}) {
 
 const mimoJob = { text: 'привет', lang: 'ru', signal: undefined, models: {}, voices: {} }
 
-test('MiMo синтезирует через чат-эндпоинт и достаёт звук из ответа', async () => {
+test('MiMo synthesizes via chat endpoint and extracts audio from the response', async () => {
   let seen = {}
   const fetchImpl = async (url, init) => {
     seen = { url: String(url), body: JSON.parse(init.body), auth: init.headers.authorization }
@@ -88,31 +88,31 @@ test('MiMo синтезирует через чат-эндпоинт и дост
   assert.equal(seen.body.stream, false)
 })
 
-test('MiMo в режиме wav отдаёт wav', async () => {
+test('MiMo wav mode returns wav', async () => {
   const fetchImpl = async () => ({ ok: true, json: async () => ({ choices: [{ message: { audio: { data: Buffer.from('w').toString('base64') } } }] }) })
   const out = await makeProviders(mimoDeps(fetchImpl, { format: 'wav' }), mimoJob).mimo()
   assert.equal(out.mime, 'audio/wav')
 })
 
-test('без ключа MiMo отказывает, а не бросает', async () => {
+test('MiMo without a key fails softly instead of throwing', async () => {
   const out = await makeProviders(mimoDeps(async () => ({}), { key: '' }), mimoJob).mimo()
   assert.equal(out.ok, false)
   assert.match(out.reason, /MIMO_API_KEY/)
 })
 
-test('ответ MiMo без звука не выдаётся за успех', async () => {
+test('MiMo response without audio is not treated as success', async () => {
   const fetchImpl = async () => ({ ok: true, json: async () => ({ choices: [{ message: {} }] }) })
   const out = await makeProviders(mimoDeps(fetchImpl), mimoJob).mimo()
   assert.equal(out.ok, false)
   assert.match(out.reason, /audio\.data/)
 })
 
-test('ошибка MiMo доносит текст сервиса', async () => {
+test('MiMo error surfaces the service message', async () => {
   const fetchImpl = async () => ({ ok: false, status: 401, json: async () => ({ error: { message: 'Invalid API Key' } }) })
   await assert.rejects(makeProviders(mimoDeps(fetchImpl), mimoJob).mimo(), /MiMo HTTP 401: Invalid API Key/)
 })
 
-test('MiniMax без утилиты отказывает понятно, а не роняет цепочку', async () => {
+test('MiniMax without CLI fails clearly without breaking the chain', async () => {
   const deps = {
     resolveKey: async () => '',
     fetchImpl: async () => { throw new Error('сеть тут ни при чём') },
@@ -123,7 +123,7 @@ test('MiniMax без утилиты отказывает понятно, а не
   assert.ok(out.reason)
 })
 
-test('оба провайдера объявлены в списке', () => {
+test('both providers are listed in PROVIDER_KEYS', () => {
   assert.ok(PROVIDER_KEYS.includes('mimo'))
   assert.ok(PROVIDER_KEYS.includes('minimax'))
   assert.ok(PROVIDER_KEYS.includes('kokoro'))
@@ -144,7 +144,7 @@ test('makeProviders includes kokoro and f5 with honest status when uninstalled',
   assert.equal(kOut.provider, 'kokoro')
   assert.match(kOut.reason, /Kokoro ONNX model not installed/)
 
-  // If model is present, kokoro synthesizes wav
+  // Weights present still must not synthesize: runtime is not bundled.
   const tmpModel = 'test/fixtures_tmp_kokoro.onnx'
   fs.writeFileSync(tmpModel, 'fake onnx data')
   try {
@@ -154,10 +154,15 @@ test('makeProviders includes kokoro and f5 with honest status when uninstalled',
     }
     const installedProviders = makeProviders(installedDeps, { text: 'test speech', lang: 'ru', models: {}, voices: {} })
     const kInstalled = await installedProviders.kokoro()
-    assert.equal(kInstalled.ok, true)
+    assert.equal(kInstalled.ok, false)
     assert.equal(kInstalled.provider, 'kokoro')
-    assert.equal(kInstalled.mime, 'audio/wav')
+    assert.match(kInstalled.reason, /runtime is not bundled/i)
   } finally {
     fs.unlinkSync(tmpModel)
   }
+
+  const fOut = await providers.f5()
+  assert.equal(fOut.ok, false)
+  assert.equal(fOut.provider, 'f5')
+  assert.ok(fOut.reason)
 })
