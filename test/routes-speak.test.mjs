@@ -130,3 +130,12 @@ test('config PUT resolves settings scope via getSettingsApi', async () => {
   const indexSrc = readFileSync(new URL('../lib/index.js', import.meta.url), 'utf8')
   assert.match(indexSrc, /getSettingsApi:\s*\(\)\s*=>\s*settingsApi/, 'apply must pass settings getter')
 })
+
+test('config PUT validates via validateConfig from api', async () => {
+  const { readFileSync } = await import('node:fs')
+  const src = readFileSync(new URL('../lib/routes.js', import.meta.url), 'utf8')
+  assert.match(src, /validateConfig/, 'routes must receive validateConfig')
+  assert.doesNotMatch(src, /parsed = Config\(/, 'must not call free Config identifier')
+  const indexSrc = readFileSync(new URL('../lib/index.js', import.meta.url), 'utf8')
+  assert.match(indexSrc, /validateConfig:\s*\(obj\)\s*=>\s*Config\(obj\)/, 'apply must pass Config wrapper')
+})
