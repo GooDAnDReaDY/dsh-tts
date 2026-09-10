@@ -187,6 +187,16 @@ dsh-tts:
 
 ---
 
+### Settings UI coverage
+
+The plugin settings card (**Settings → Plugins → Plugin settings**) exposes every user-facing schema field, including an **Advanced** block for `maxChars`, `sentenceChars`, `timeoutMs`, `maxQueue`, `openaiBaseUrl`, `mimoBaseUrl`, `mimoFormat`, and `minimaxBin`.
+
+Provider **API keys are never stored in plugin settings**. Paste them in the chain editor; values go to the DSH credential store via `PUT /dsh-tts/credential`.
+
+Config-only (not in the card): `*KeyEnv` fields (`openaiKeyEnv`, `elevenlabsKeyEnv`, …). They only rename the credential slot the plugin looks up. Change them in `settings.yaml` if you must rebind a key name; the defaults match the usual environment variable names.
+
+The sidebar `settings.section` entry is a **fallback** and is registered only when `settings.plugin.item` is missing from the build.
+
 ## 🤖 HTTP Endpoints Reference
 
 * `GET /dsh-tts/stream` — Real-time Server-Sent Events (SSE) audio streaming.

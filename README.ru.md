@@ -180,6 +180,16 @@ dsh-tts:
 
 ---
 
+### Покрытие настроек в UI
+
+Карточка плагина (**Настройки → Плагины → Настройки плагинов**) показывает все пользовательские поля схемы, включая блок **Дополнительно**: `maxChars`, `sentenceChars`, `timeoutMs`, `maxQueue`, `openaiBaseUrl`, `mimoBaseUrl`, `mimoFormat`, `minimaxBin`.
+
+**API-ключи не хранятся в настройках плагина.** Вставляйте их в редакторе цепочки — значение уходит в credential store DSH через `PUT /dsh-tts/credential`.
+
+Только в конфиге (нет в карточке): поля `*KeyEnv` (`openaiKeyEnv`, `elevenlabsKeyEnv`, …). Они задают **имя** credential-слота; по умолчанию совпадают с привычными именами env-переменных. Меняйте в `settings.yaml`, если нужно перевязать имя ключа.
+
+Пункт `settings.section` в боковом меню — **fallback** и регистрируется, только если в сборке нет `settings.plugin.item`.
+
 ## 🤖 HTTP роуты API
 
 * `GET /dsh-tts/stream` — Потоковая передача аудио по SSE в реальном времени.
