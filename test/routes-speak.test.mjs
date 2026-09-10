@@ -117,3 +117,16 @@ test('index.js passes cleanText into registerHttpRoutes api', async () => {
   const routesSrc = readFileSync(path.join(root, 'lib/routes.js'), 'utf8')
   assert.match(routesSrc, /const \{[\s\S]*?cleanText,[\s\S]*?\} = api/, 'routes must destructure cleanText from api')
 })
+
+test('config PUT resolves settings scope via getSettingsApi', async () => {
+  const { readFileSync } = await import('node:fs')
+  const src = readFileSync(new URL('../lib/routes.js', import.meta.url), 'utf8')
+  assert.match(src, /getSettingsApi/, 'routes must receive getSettingsApi')
+  assert.match(
+    src,
+    /const settingsApi = typeof getSettingsApi === 'function' \? getSettingsApi\(\) : null/,
+    'settingsApi must be resolved from getSettingsApi',
+  )
+  const indexSrc = readFileSync(new URL('../lib/index.js', import.meta.url), 'utf8')
+  assert.match(indexSrc, /getSettingsApi:\s*\(\)\s*=>\s*settingsApi/, 'apply must pass settings getter')
+})
