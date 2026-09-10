@@ -139,6 +139,14 @@ dsh plugin --profile web add @goodandready/dsh-tts
 
 ---
 
+### 设置界面覆盖
+
+插件设置卡片（**设置 → 插件 → 插件设置**）展示全部用户向 schema 字段，并含 **Advanced** 区：`maxChars`、`sentenceChars`、`timeoutMs`、`maxQueue`、`openaiBaseUrl`、`mimoBaseUrl`、`mimoFormat`、`minimaxBin`。
+
+API 密钥不写入插件设置，只在链编辑器粘贴，经 `PUT /dsh-tts/credential` 写入 DSH credential store。
+
+仅配置文件：`*KeyEnv` 字段（凭证槽位名称）。侧边栏 `settings.section` 仅为 fallback。
+
 ## ⚙️ 配置示例（`settings.yaml`）
 
 ```yaml

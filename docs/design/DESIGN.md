@@ -9,7 +9,7 @@
 - Web/UI:
   - `conversation.input.dock` — элемент управления чтением в строке ввода (`SpeakerControl`): индикация текущего воспроизведения, пауза/возобновление, стоп, выпадающий список недавних реплик с избранным.
   - `settings.plugin.item` — карточка плагина во вкладке «Настройки → Плагины → Настройки плагинов» (`TtsCard` -> `TtsSection`).
-  - `settings.section` (fallback) — резервный пункт в боковом меню настроек на случай отсутствия слота `settings.plugin.item`.
+  - `settings.section` (fallback only) — регистрируется **только** если `settings.plugin.item` недоступен (`tryPluginItem()` === false). При живой карточке боковой раздел не создаётся.
 - DSH UI / settings / slots:
   - Слот `settings.plugin.item` (primary) с ключом namespace `dsh-tts`.
   - Слот `conversation.input.dock` (order: 5) с локализацией `dsh-tts`.
@@ -94,6 +94,7 @@
 - 2026-09-07 — Релиз v0.3.23: защита сокращений/чисел от разрыва предложений (lib/text.js), in-flight deduplication синтеза для устранения Cache Stampede, увеличение cloud таймаутов до 10 сек (lib/providers.js), бесшовный gapless prebuffering в веб-плеере (lib/client.js), удаление мертвых заглушек router.js и worklet.js, честная ошибка локальных движков Kokoro/F5 при отсутствии онлайнового рантайма вместо синтетической синусоиды 440 Гц.
 
 - 2026-09-09 — Local Kokoro/F5 neural inference is not bundled; providers fail with a clear reason and never emit synthetic tones. Marketing/docs must match. Revisit when a supported runtime is wired.
+- 2026-09-10 — Settings card coverage (#88): user-facing schema fields `maxChars`, `sentenceChars`, `timeoutMs`, `maxQueue`, `openaiBaseUrl`, `mimoBaseUrl`, `mimoFormat`, `minimaxBin` live in the Advanced block. `*KeyEnv` fields name credential slots and stay config-only (keys are written via the chain editor / `/dsh-tts/credential`). `settings.section` remains fallback-only with a unit test.
 
 ## Superseded notes
 Earlier free-form notes under docs/superpowers/ are retired; this file and docs/plans/ are canonical.
