@@ -14,8 +14,8 @@ Text-to-speech for the DeepSeek Harness Web UI. Speaks agent replies through a h
 | Edge TTS | n/a (CLI) | yes, if `edge-tts` is installed |
 | Piper | user ONNX path | yes, if `piper` + model configured |
 | eSpeak NG | n/a | yes, if `espeak-ng` is installed |
-| Kokoro-82M | yes | **no** — inference not bundled |
-| F5-TTS | yes | **no** — inference not bundled |
+| Kokoro-82M | yes | **no** — inference not bundled (UI no longer offers install as speech path) |
+| F5-TTS | yes | **no** — inference not bundled (UI no longer offers install as speech path) |
 
 ## Providers (18)
 
@@ -41,6 +41,8 @@ Text-to-speech for the DeepSeek Harness Web UI. Speaks agent replies through a h
 | lib/index.js | apply, Config, synthesis, tools |
 | lib/routes.js | HTTP routes |
 | lib/providers.js | provider implementations |
+| lib/providers/constants.js | provider keys/models/voices |
+| lib/breaker.js | soft circuit breaker |
 | lib/text.js | scrubbing, pronunciation, split |
 | lib/cache.js | disk LRU cache |
 | lib/keys.js | credential refs / secret strip |
