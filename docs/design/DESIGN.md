@@ -88,6 +88,7 @@
   - Использовать внешние несистемные стили без префикса `.dts-`.
 
 ## Locked Design Decisions
+- 2026-09-11 — Stability/UI/quality block #95–#108: SSE heartbeat + client reconnect; player stop safety + autoplay unlock banner; Kokoro/F5 install UX removed (runtime not bundled); soft provider circuit breaker surfaced in card telemetry; Advanced collapsed by default; Clear cache confirms; English source for defaults/reasons/comments; status theme tints via color-mix; stream-hub behavioral tests.
 - 2026-08-20 — Карточка во вкладке плагинов `settings.plugin.item` утверждена как постоянное место настроек; боковой раздел оставлен только как аварийный fallback.
 - 2026-09-02 — Интеграция с Kokoro и F5-TTS выполняется внутри плагина с потоковым скачиванием весов и WAV-кодировщиком.
 - 2026-09-06 — Статус снимка настроек `unavailable` блокирует редактирование формы (`writable = false`) для предотвращения рассинхронизации состояния с сервером.

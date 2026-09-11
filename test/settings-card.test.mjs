@@ -40,13 +40,18 @@ test('card covers all user-facing schema fields except documented KeyEnv slots',
   const schema = schemaFields()
   const card = cardFields()
   const keyEnv = schema.filter((k) => /KeyEnv$/.test(k))
+  // Kokoro/F5 install UX intentionally removed: inference runtime is not bundled (#98).
+  const intentionalHide = new Set(['enableLocalEngines', 'kokoroEnabled', 'f5Enabled'])
   const missing = schema.filter((k) => !card.has(k))
-  const unexpected = missing.filter((k) => !/KeyEnv$/.test(k))
+  const unexpected = missing.filter((k) => !/KeyEnv$/.test(k) && !intentionalHide.has(k))
   assert.deepEqual(
     unexpected,
     [],
-    `schema fields missing from card (KeyEnv allowed): ${unexpected.join(', ')}`,
+    `schema fields missing from card (KeyEnv/intentional hide allowed): ${unexpected.join(', ')}`,
   )
+  for (const k of intentionalHide) {
+    assert.equal(card.has(k), false, k + ' must not be rendered while runtime is not bundled')
+  }
   assert.ok(keyEnv.length >= 10, 'expected credential-name KeyEnv fields in schema')
   // Advanced block must expose the previously missing limits/endpoints
   for (const k of ['maxChars', 'sentenceChars', 'timeoutMs', 'maxQueue', 'openaiBaseUrl', 'mimoBaseUrl', 'mimoFormat', 'minimaxBin']) {
