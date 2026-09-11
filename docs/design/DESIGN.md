@@ -98,3 +98,11 @@
 
 ## Superseded notes
 Earlier free-form notes under docs/superpowers/ are retired; this file and docs/plans/ are canonical.
+
+
+### v0.4.1 — ClineBot UI Alignment, ErrorBoundary & Client Modularization
+- **UI & Design Tokens**: Переход на единую дизайн-систему по эталону `dsh-clinebot` (`.dts-wrap`, `.dts-header`, `.dts-page-title`, `.dts-block`, бейджи состояния `.dts-badge-*`, кнопки `.dts-btn-*`, скругления 12px/8px, нативные токены `--dsw-alias-*`).
+- **Resilience**: Внедрен `ErrorBoundary` вокруг настроек и слотов, предотвращающий сбой всего веб-интерфейса DSH (React Error 310 / uncaught render exception).
+- **Reactivity**: Миграция реактивности настроек `TtsSection` на `React.useSyncExternalStore` с `SNAPSHOT_READY` / `SNAPSHOT_LOADING`.
+- **Telemetry**: Добавлены информационные бейджи состояния в шапку настроек (Host Online, SSE Active, Cache stats).
+- **Architecture (Issue #66)**: Монолит `lib/client.js` декомпозирован на модульные фрагменты в `lib/client-src/` (все исходные файлы строго < 800 строк). Сборка бандла автоматизирована через `scripts/build-client.mjs` при `npm test` и `pretest`.
