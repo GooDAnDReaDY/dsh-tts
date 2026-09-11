@@ -116,8 +116,8 @@ test('polling runs under an effect scope and owns its cleaner', async () => {
   const s = recordingCtx(['settings.plugin.item', 'conversation.input.dock'])
   applyWithIntervalStub(exported, s.ctx)
   const labels = s.effectLabels.map(String)
-  assert.ok(labels.some((l) => l.indexOf('опрос готовых озвучек') !== -1),
-    'опрос должен жить под ctx.effect')
+  assert.ok(labels.some((l) => l.indexOf('poll pending audio') !== -1),
+    'polling must live under ctx.effect')
 })
 
 // Задача #13: док чтения берёт подписи из словарей, а не из кода.
