@@ -101,9 +101,10 @@
 Earlier free-form notes under docs/superpowers/ are retired; this file and docs/plans/ are canonical.
 
 
-### v0.4.1 — ClineBot UI Alignment, ErrorBoundary & Client Modularization
-- **UI & Design Tokens**: Переход на единую дизайн-систему по эталону `dsh-clinebot` (`.dts-wrap`, `.dts-header`, `.dts-page-title`, `.dts-block`, бейджи состояния `.dts-badge-*`, кнопки `.dts-btn-*`, скругления 12px/8px, нативные токены `--dsw-alias-*`).
-- **Resilience**: Внедрен `ErrorBoundary` вокруг настроек и слотов, предотвращающий сбой всего веб-интерфейса DSH (React Error 310 / uncaught render exception).
-- **Reactivity**: Миграция реактивности настроек `TtsSection` на `React.useSyncExternalStore` с `SNAPSHOT_READY` / `SNAPSHOT_LOADING`.
-- **Telemetry**: Добавлены информационные бейджи состояния в шапку настроек (Host Online, SSE Active, Cache stats).
-- **Architecture (Issue #66)**: Монолит `lib/client.js` декомпозирован на модульные фрагменты в `lib/client-src/` (все исходные файлы строго < 800 строк). Сборка бандла автоматизирована через `scripts/build-client.mjs` при `npm test` и `pretest`.
+### v0.4.6 — Canonical EN+ZH Localization, Smart Boundary Tokenizer, Audio Clip Export & Subagent Persona Matrix
+- **Dual Localization (EN + ZH)**: Плагин канонически двуязычный. Полный китайский словарь (`zh`) для всех 65+ ключей интерфейса и речевых шаблонов (`speechPhrases('zh-CN')`). Русский словарь `ru` вырезан из плагина — русификация выполняется через централизованный плагин `@goodandready/dsh-russian-lang` (Gitea issue #181).
+- **Smart Boundary Tokenizer**: Интеллектуальный токенизатор предложений в `lib/text.js`. Защищает сокращения, доменные имена (`goodandready.app`), расширения файлов (`package.json`), версии и списки от ложного дробления. Поддерживает полноширинную китайскую пунктуацию (`。！？`) и адаптивный порог для CJK-иероглифов.
+- **Audio Clip Export**: Экспорт озвученных фраз в аудиофайл (`exportAudioClip(text)`) с кнопкой мгновенного скачивания `⤓` в `SpeakerControl` и списке недавних реплик.
+- **Subagent Persona Matrix & Auto-detection**: Опция `autoDetectSubagent` (boolean, default true) в конфигурации и карточке настроек. Автоматическое определение субагентов по метаданным сообщения (`subagent`, `agent`, `author`, `name`) с переключением голоса и стиля SSML.
+- **Client Bundle Size**: Оптимизированный размер бандла (`< 92 KiB` minified/packed), полное покрытие тестами (108 unit-тестов).
+
