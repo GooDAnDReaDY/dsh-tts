@@ -103,13 +103,22 @@ graph LR
 * **预配置词汇表**：为常见技术缩写和开发者术语提供正确语音替换（SQL、Nginx、Kubernetes/K8s、Docker、API、JSON、YAML、GUI、CLI、CI/CD 等 25 个术语）。
 * **交互式编辑器**：编辑规则，逐条点击 **▶ 试听** 按钮预听效果，一键加载全部 IT 术语。
 
-### 5. 👥 多智能体角色个性化语音
-* 为不同子智能体（`coder`、`reviewer`、`planner`、`tester` 等）分配独立的语音、服务商、模型和提示音。
-* 自动从会话事件中识别智能体名称。
+### 5. 👥 多智能体角色个性化语音与自动识别
+* 为不同子智能体（`coder`、`reviewer`、`planner`、`tester` 等）分配独立的语音、服务商、模型、提示音与 SSML 风格。
+* **智能体自动识别**：开启 `autoDetectSubagent` 后，自动根据消息元数据（`subagent`、`agent`、`author`、`name`）匹配对应的专属音色与语速。
 
-### 6. 💬 即时通讯语音消息集成（配合 `@goodandready/dsh-messenger-gateway`）
+### 6. 💾 音频片段导出与历史回放
+* 任意朗读过的回复均可通过 `exportAudioClip(text)` 导出为标准音频文件（`.wav` / `.mp3`）。
+* 输入框控制栏及最近朗读列表中内置即时下载按钮（`⤓`）。
+
+### 7. 💬 即时通讯语音消息集成（配合 `@goodandready/dsh-messenger-gateway`）
 * 通过 `POST /dsh-tts/speak` 为 Telegram 和 Discord 机器人回复生成语音消息。
 * 缺少网关插件时自动显示安装提示，防护性依赖检查。
+
+### 8. 🌐 深度中文本土化支持与智能断句分词器
+* 完整内置英文 (`en`) 与中文 (`zh`) 双语界面及全量语音模版。
+* 针对 CJK 中文全角标点（`。！？`）与自适应分词长度特别优化，避免长句卡顿。
+* 保护缩写、文件名（`package.json`）、网址域名（`goodandready.app`）及 IP / 版本号不被误切。
 
 ---
 

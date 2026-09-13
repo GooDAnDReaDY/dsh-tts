@@ -110,11 +110,20 @@ graph LR
 
 ### 5. 👥 Multi-Agent Personas & Subagent Voice Overrides
 * Assign distinct voices, providers, models, and audio chimes to individual subagents (e.g. `coder`, `reviewer`, `planner`, `tester`).
-* Automatically matches incoming assistant turn events (`session.agent` or `message.agent`).
+* **Subagent Auto-Detection**: With `autoDetectSubagent` enabled, incoming turns automatically match subagents by message metadata (`subagent`, `agent`, `author`, `name`) and dynamically apply voice, rate, and SSML style presets.
 
-### 6. 💬 Messenger Voice Notes Integration (with `@goodandready/dsh-messenger-gateway`)
+### 6. 💾 Audio Clip Export & Speech History
+* Export any spoken utterance directly to an audio file (`.wav` / `.mp3`) via `exportAudioClip(text)`.
+* Instant download buttons (`⤓`) integrated directly into the input dock speaker control and recent utterances dropdown list.
+
+### 7. 💬 Messenger Voice Notes Integration (with `@goodandready/dsh-messenger-gateway`)
 * Generates voice audio for Telegram and Discord bot replies via `POST /dsh-tts/speak`.
 * Protective dependency check with installation hint when gateway plugin is missing.
+
+### 8. 🌐 Canonical English & Chinese Localization (EN + ZH)
+* Complete built-in English (`en`) and Chinese (`zh`) UI and speech template dictionaries.
+* Centralized Russian localization provided via `@goodandready/dsh-russian-lang` through Gitea issue tracking.
+* Smart boundary tokenizer supporting CJK full-width punctuation (`。！？`), abbreviations, file extensions, and IP/version numbers.
 
 ---
 
