@@ -104,7 +104,7 @@ test('routes.js: /dsh-tts/cache handles DELETE with trusted origin and clears ca
   assert.equal(gRes.statusCode, 405)
 
   // DELETE without origin (same-origin / trusted) should succeed
-  const { req: dReq, res: dRes } = mockReqRes({ method: 'DELETE' })
+  const { req: dReq, res: dRes } = mockReqRes({ method: 'DELETE', headers: { 'sec-fetch-site': 'same-origin' } })
   await cacheRoute.handler(dReq, dRes)
   assert.equal(dRes.statusCode, 200)
   assert.equal(cleared, true)

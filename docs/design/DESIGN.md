@@ -97,6 +97,8 @@
 - 2026-09-09 — Local Kokoro/F5 neural inference is not bundled; providers fail with a clear reason and never emit synthetic tones. Marketing/docs must match. Revisit when a supported runtime is wired.
 - 2026-09-10 — Settings card coverage (#88): user-facing schema fields `maxChars`, `sentenceChars`, `timeoutMs`, `maxQueue`, `openaiBaseUrl`, `mimoBaseUrl`, `mimoFormat`, `minimaxBin` live in the Advanced block. `*KeyEnv` fields name credential slots and stay config-only (keys are written via the chain editor / `/dsh-tts/credential`). `settings.section` remains fallback-only with a unit test.
 
+- 2026-09-18 — Fail-closed request trust policy (#119): isTrustedSettingsRequest enforces strict fail-closed validation. Accepts loopback IP, same-origin/same-site sec-fetch-site, matching origin/host header pair, or Bearer auth token. /credential endpoint never leaks secret key values.
+
 ## Superseded notes
 Earlier free-form notes under docs/superpowers/ are retired; this file and docs/plans/ are canonical.
 
