@@ -9,3 +9,12 @@ credentials.yaml
 *.log
 .worktrees/
 *.tgz
+
+# Internal documentation and platform configs
+AGENTS.md
+index.md
+.gitea/
+docs/architecture/
+docs/deployment/
+docs/plans/
+docs/testing/
