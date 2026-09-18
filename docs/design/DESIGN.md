@@ -8,8 +8,7 @@
 ## User Surfaces
 - Web/UI:
   - `conversation.input.dock` — элемент управления чтением в строке ввода (`SpeakerControl`): индикация текущего воспроизведения, пауза/возобновление, стоп, выпадающий список недавних реплик с избранным.
-  - `settings.plugin.item` — карточка плагина во вкладке «Настройки → Плагины → Настройки плагинов» (`TtsCard` -> `TtsSection`).
-  - `settings.section` (fallback only) — регистрируется **только** если `settings.plugin.item` недоступен (`tryPluginItem()` === false). При живой карточке боковой раздел не создаётся.
+  - `settings.plugin.item` — карточка плагина во вкладке «Настройки → Плагины → Настройки плагинов» (`TtsCard` -> `TtsSection`). Единый слот настроек плагина; регистрация `settings.section` вырезана (#126).
 - DSH UI / settings / slots:
   - Слот `settings.plugin.item` (primary) с ключом namespace `dsh-tts`.
   - Слот `conversation.input.dock` (order: 5) с локализацией `dsh-tts`.
@@ -79,27 +78,27 @@
 
 ## Do / Don't
 - Do:
-  - Использовать `settings.plugin.item` как основной слот настроек.
+  - Использовать `settings.plugin.item` как основной и единственный слот настроек.
   - Проверять статус снимка настроек `snap.status === 'ready'` перед разрешением `writable`.
   - Экспортировать полное scoped-имя модуля `@goodandready/dsh-tts`.
 - Don't:
   - Хардкодить `writable = true`.
-  - Регистрировать боковой раздел `settings.section`, если слот `settings.plugin.item` активен.
+  - Регистрировать боковой раздел `settings.section`.
   - Использовать внешние несистемные стили без префикса `.dts-`.
 
 ## Locked Design Decisions
 - 2026-09-11 — Stability/UI/quality block #95–#108: SSE heartbeat + client reconnect; player stop safety + autoplay unlock banner; Kokoro/F5 install UX removed (runtime not bundled); soft provider circuit breaker surfaced in card telemetry; Advanced collapsed by default; Clear cache confirms; English source for defaults/reasons/comments; status theme tints via color-mix; stream-hub behavioral tests.
-- 2026-08-20 — Карточка во вкладке плагинов `settings.plugin.item` утверждена как постоянное место настроек; боковой раздел оставлен только как аварийный fallback.
+- 2026-08-20 — Карточка во вкладке плагинов `settings.plugin.item` утверждена как постоянное место настроек.
 - 2026-09-02 — Интеграция с Kokoro и F5-TTS выполняется внутри плагина с потоковым скачиванием весов и WAV-кодировщиком.
 - 2026-09-06 — Статус снимка настроек `unavailable` блокирует редактирование формы (`writable = false`) для предотвращения рассинхронизации состояния с сервером.
 - 2026-09-07 — Релиз v0.3.23: защита сокращений/чисел от разрыва предложений (lib/text.js), in-flight deduplication синтеза для устранения Cache Stampede, увеличение cloud таймаутов до 10 сек (lib/providers.js), бесшовный gapless prebuffering в веб-плеере (lib/client.js), удаление мертвых заглушек router.js и worklet.js, честная ошибка локальных движков Kokoro/F5 при отсутствии онлайнового рантайма вместо синтетической синусоиды 440 Гц.
 
 - 2026-09-09 — Local Kokoro/F5 neural inference is not bundled; providers fail with a clear reason and never emit synthetic tones. Marketing/docs must match. Revisit when a supported runtime is wired.
-- 2026-09-10 — Settings card coverage (#88): user-facing schema fields `maxChars`, `sentenceChars`, `timeoutMs`, `maxQueue`, `openaiBaseUrl`, `mimoBaseUrl`, `mimoFormat`, `minimaxBin` live in the Advanced block. `*KeyEnv` fields name credential slots and stay config-only (keys are written via the chain editor / `/dsh-tts/credential`). `settings.section` remains fallback-only with a unit test.
-
+- 2026-09-10 — Settings card coverage (#88): user-facing schema fields `maxChars`, `sentenceChars`, `timeoutMs`, `maxQueue`, `openaiBaseUrl`, `mimoBaseUrl`, `mimoFormat`, `minimaxBin` live in the Advanced block. `*KeyEnv` fields name credential slots and stay config-only (keys are written via the chain editor / `/dsh-tts/credential`).
 - 2026-09-18 — Fail-closed request trust policy (#119): isTrustedSettingsRequest enforces strict fail-closed validation. Accepts loopback IP, same-origin/same-site sec-fetch-site, matching origin/host header pair, or Bearer auth token. /credential endpoint never leaks secret key values.
 - 2026-09-18 — Canonical EN+ZH Localization Audit & Strict Source Zero-Cyrillic Boundary (#121): SPEECH_PHRASES contains only canonical EN and ZH dictionaries. Core lib/ source code strictly purged of all hardcoded Russian pronunciation rules, Russian abbreviations, Cyrillic literals, and masked unicode escapes. BUILTIN_IT_DICTIONARY in core is empty by default; all Russian language pronunciation dictionaries and localization are 100% delegated to @goodandready/dsh-russian-lang (Gitea issue #248). Automated unit test in test/features_en_zh.test.mjs enforces zero Cyrillic literals, zero masked escapes, and zero lang: 'ru' rules in lib/.
 - 2026-09-18 — Repository Hygiene & Public Tree Sanitization (#122): Internal documentation and platform configuration files (AGENTS.md, index.md, docs/plans/, docs/architecture/, docs/deployment/, docs/testing/, .gitea/) are untracked from git index and added to .gitignore. Only product design contract docs/design/DESIGN.md is tracked in repository.
+- 2026-09-18 — Settings Section Redundancy Purge (#126): Redundant settings.section fallback registration removed from lib/client-src/60-card-dock.js and lib/client.js. All plugin settings live strictly inside the settings.plugin.item card in the Plugins tab.
 
 ## Superseded notes
 Earlier free-form notes under docs/superpowers/ are retired; this file and docs/plans/ are canonical.

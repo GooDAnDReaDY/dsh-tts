@@ -164,7 +164,6 @@ dsh plugin --profile web add @goodandready/dsh-tts
 
 API 密钥不写入插件设置，只在链编辑器粘贴，经 `PUT /dsh-tts/credential` 写入 DSH credential store。
 
-仅配置文件：`*KeyEnv` 字段（凭证槽位名称）。侧边栏 `settings.section` 仅为 fallback。
 
 ## ⚙️ 配置示例（`settings.yaml`）
 

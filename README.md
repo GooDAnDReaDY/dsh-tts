@@ -214,7 +214,6 @@ Provider **API keys are never stored in plugin settings**. Paste them in the cha
 
 Config-only (not in the card): `*KeyEnv` fields (`openaiKeyEnv`, `elevenlabsKeyEnv`, …). They only rename the credential slot the plugin looks up. Change them in `settings.yaml` if you must rebind a key name; the defaults match the usual environment variable names.
 
-The sidebar `settings.section` entry is a **fallback** and is registered only when `settings.plugin.item` is missing from the build.
 
 ## 🤖 HTTP Endpoints Reference
 

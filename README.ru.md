@@ -197,7 +197,6 @@ dsh-tts:
 
 Только в конфиге (нет в карточке): поля `*KeyEnv` (`openaiKeyEnv`, `elevenlabsKeyEnv`, …). Они задают **имя** credential-слота; по умолчанию совпадают с привычными именами env-переменных. Меняйте в `settings.yaml`, если нужно перевязать имя ключа.
 
-Пункт `settings.section` в боковом меню — **fallback** и регистрируется, только если в сборке нет `settings.plugin.item`.
 
 ## 🤖 HTTP роуты API
 

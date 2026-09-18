@@ -30,10 +30,10 @@ function cardFields() {
   return used
 }
 
-test('settings.section is fallback-only when plugin.item registers', () => {
-  assert.match(client, /if \(tryPluginItem\(\)\) return/, 'must return after successful plugin.item registration')
+test('settings.plugin.item is the primary and only settings slot (#126)', () => {
   assert.match(client, /name: 'settings\.plugin\.item'/, 'primary slot must be settings.plugin.item')
   assert.match(client, /key: NS/, 'plugin.item key must equal settings namespace')
+  assert.equal(client.includes("name: 'settings.section'"), false, 'redundant settings.section must not exist')
 })
 
 test('card covers all user-facing schema fields except documented KeyEnv slots', () => {

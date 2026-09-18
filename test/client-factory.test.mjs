@@ -35,9 +35,7 @@ test('client factory returns apply after CommonJS shim', () => {
 })
 
 
-// Issue #12: настройки живут карточкой во вкладке «Настройки плагинов».
-// Расхождение ключа с пространством настроек молчит в рантайме, поэтому
-// проверяем точные значения регистрации, а не «что-то зарегистрировалось».
+// Issue #12 / #126: настройки живут карточкой во вкладке «Настройки плагинов».
 async function loadCardRegistration() {
   const captured = {}
   globalThis.window = { __ModuleLoader__: { load: (r) => { captured.r = r } } }
@@ -101,14 +99,12 @@ test('settings register as a Plugins-tab card keyed by the namespace', async () 
     'строки в боковом списке быть не должно')
 })
 
-test('without settings.plugin.item the plugin falls back to the sidebar section', async () => {
+test('settings.section is never registered in core client bundle (#126)', async () => {
   const exported = (await loadCardRegistration()).factory(() => cardReact)
   const s = recordingCtx(['settings.section', 'conversation.input.dock'])
   applyWithIntervalStub(exported, s.ctx)
-  assert.equal(s.registered.some((r) => r.name === 'settings.plugin.item'), false)
-  const section = s.registered.find((r) => r.name === 'settings.section')
-  assert.ok(section, 'запасной путь: боковой раздел сохранён')
-  assert.equal(section.id, '@goodandready/dsh-tts')
+  assert.equal(s.registered.some((r) => r.name === 'settings.section'), false,
+    'settings.section must never be registered in sidebar')
 })
 
 test('polling runs under an effect scope and owns its cleaner', async () => {
@@ -120,10 +116,6 @@ test('polling runs under an effect scope and owns its cleaner', async () => {
     'polling must live under ctx.effect')
 })
 
-// Задача #13: док чтения берёт подписи из словарей, а не из кода.
-// Проверяем по исходнику: подпись слота рисует ядро, тултипы — компонент,
-// и оба пути молчат при поломке — русская строка просто остаётся русской
-// для англоязычного читателя, и никто об этом не узнает.
 test('speech dock does not hardcode labels in source', () => {
   const srcPath = path.join(path.dirname(fileURLToPath(import.meta.url)), '../lib/client.js')
   const src = readFileSync(srcPath, 'utf8')
@@ -141,6 +133,7 @@ test('speech dock does not hardcode labels in source', () => {
   assert.match(src, /locale: NS,/, 'без locale в слоте перевод не дойдёт до компонента')
   assert.match(src, /label: \(\) => fallbackDockText\('dockLabel'\)/, 'подпись слота — через привязку')
 })
+
 test('server module exports scoped name @goodandready/dsh-tts', () => {
   const srcPath = path.join(path.dirname(fileURLToPath(import.meta.url)), '../lib/index.js')
   const src = readFileSync(srcPath, 'utf8')
