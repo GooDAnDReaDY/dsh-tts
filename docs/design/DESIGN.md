@@ -8,9 +8,10 @@
 ## User Surfaces
 - Web/UI:
   - `conversation.input.dock` — элемент управления чтением в строке ввода (`SpeakerControl`): индикация текущего воспроизведения, пауза/возобновление, стоп, выпадающий список недавних реплик с избранным.
-  - `settings.plugin.item` — карточка плагина во вкладке «Настройки → Плагины → Настройки плагинов» (`TtsCard` -> `TtsSection`). Единый слот настроек плагина; регистрация `settings.section` вырезана (#126).
+  - `plugins.row.config` — **основная** поверхность настроек: страница плагина, открывается по контролю «настроить» на его строке в «Плагинах» (ключ `@goodandready/dsh-tts#dsh-tts`). Форма рендерится **bare** (`TtsRowConfig` -> `TtsSection`), потому что страница сама рисует заголовок, иконку, хлебную крошку и отступы (#127).
+  - `settings.plugin.item` — прежняя карточка во вкладке «Настройки → Плагины → Настройки плагинов» (`TtsCard` -> `TtsSection`), сохранена как **фолбэк** для старых ядер (#126, #127).
 - DSH UI / settings / slots:
-  - Слот `settings.plugin.item` (primary) с ключом namespace `dsh-tts`.
+  - Слот `plugins.row.config` (primary, key `@goodandready/dsh-tts#dsh-tts`) + фолбэк `settings.plugin.item` (key = namespace `dsh-tts`).
   - Слот `conversation.input.dock` (order: 5) с локализацией `dsh-tts`.
   - Встроенный словарь IT-произношения и редактор пользовательских правил произношения.
   - Интеграция с `@goodandready/dsh-voice` (auto-mute при речи пользователя) и `@goodandready/dsh-messenger-gateway` (TTS для мессенджеров).
@@ -78,7 +79,8 @@
 
 ## Do / Don't
 - Do:
-  - Использовать `settings.plugin.item` как основной и единственный слот настроек.
+  - Регистрировать настройки в `plugins.row.config` первым, прежние посадки (`settings.plugin.item`) держать как фолбэк.
+  - Держать форму на странице строки bare: страница сама рисует заголовок, иконку, крошку и отступы.
   - Проверять статус снимка настроек `snap.status === 'ready'` перед разрешением `writable`.
   - Экспортировать полное scoped-имя модуля `@goodandready/dsh-tts`.
 - Don't:
@@ -99,6 +101,7 @@
 - 2026-09-18 — Canonical EN+ZH Localization Audit & Strict Source Zero-Cyrillic Boundary (#121): SPEECH_PHRASES contains only canonical EN and ZH dictionaries. Core lib/ source code strictly purged of all hardcoded Russian pronunciation rules, Russian abbreviations, Cyrillic literals, and masked unicode escapes. BUILTIN_IT_DICTIONARY in core is empty by default; all Russian language pronunciation dictionaries and localization are 100% delegated to @goodandready/dsh-russian-lang (Gitea issue #248). Automated unit test in test/features_en_zh.test.mjs enforces zero Cyrillic literals, zero masked escapes, and zero lang: 'ru' rules in lib/.
 - 2026-09-18 — Repository Hygiene & Public Tree Sanitization (#122): Internal documentation and platform configuration files (AGENTS.md, index.md, docs/plans/, docs/architecture/, docs/deployment/, docs/testing/, .gitea/) are untracked from git index and added to .gitignore. Only product design contract docs/design/DESIGN.md is tracked in repository.
 - 2026-09-18 — Settings Section Redundancy Purge (#126): Redundant settings.section fallback registration removed from lib/client-src/60-card-dock.js and lib/client.js. All plugin settings live strictly inside the settings.plugin.item card in the Plugins tab.
+- 2026-09-19 — Plugins Row Seat (#127): settings register into `plugins.row.config` first, keyed `@goodandready/dsh-tts#dsh-tts` (row id from cordis.patch.yml). The page view renders the form bare (`TtsRowConfig` -> `TtsSection`) because the host page supplies title, icon, crumb and padding; the summary view is a one-line state. `settings.plugin.item` stays as a fallback for older cores, and `settings.section` remains removed. Guard: test/row-config-seat.test.mjs.
 
 ## Superseded notes
 Earlier free-form notes under docs/superpowers/ are retired; this file and docs/plans/ are canonical.

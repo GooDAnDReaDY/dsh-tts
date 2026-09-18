@@ -30,10 +30,15 @@ function cardFields() {
   return used
 }
 
-test('settings.plugin.item is the primary and only settings slot (#126)', () => {
-  assert.match(client, /name: 'settings\.plugin\.item'/, 'primary slot must be settings.plugin.item')
+test('settings surfaces: plugins.row.config first, settings.plugin.item kept as fallback (#126, #127)', () => {
+  assert.match(client, /name: 'plugins\.row\.config'/, 'row seat must be registered')
+  assert.match(client, /name: 'settings\.plugin\.item'/, 'legacy card slot must stay as fallback')
   assert.match(client, /key: NS/, 'plugin.item key must equal settings namespace')
   assert.equal(client.includes("name: 'settings.section'"), false, 'redundant settings.section must not exist')
+  // newest-first order: the row seat is injected before the legacy card slot
+  const rowSeat = client.indexOf("'plugins.row.config'")
+  const legacy = client.indexOf("'settings.plugin.item'")
+  assert.ok(rowSeat > -1 && legacy > -1 && rowSeat < legacy, 'row seat must be registered before the fallback')
 })
 
 test('card covers all user-facing schema fields except documented KeyEnv slots', () => {
