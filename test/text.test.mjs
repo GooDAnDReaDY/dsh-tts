@@ -69,9 +69,9 @@ test('markdown table becomes a short notice without the separator row', () => {
   assert.ok(out.includes('Итого:'))
 })
 
-test('russian phrases come from the language setting', () => {
+test('non-built-in language falls back to English phrases', () => {
   const out = stripForSpeech('```ru\nпервая\nвторая\n```', 200, { phrases: speechPhrases('ru-RU') })
-  assert.match(out, /блок кода, 2 строк/)
+  assert.match(out, /code block, 2 lines/)
 })
 
 test('inline code still disappears silently', () => {
@@ -126,9 +126,9 @@ test('maxChars 0 disables truncation', () => {
   assert.equal(stripForSpeech(long, 0).length, 5000)
 })
 
-test('summary intro phrases exist for both languages', () => {
+test('summary intro phrases exist for canonical languages', () => {
   assert.ok(SPEECH_PHRASES.en.summaryIntro)
-  assert.ok(SPEECH_PHRASES.ru.summaryIntro)
+  assert.ok(SPEECH_PHRASES.zh.summaryIntro)
 })
 
 
@@ -168,9 +168,9 @@ test('maxChars 0 disables truncation', () => {
   assert.equal(stripForSpeech(long, 0).length, 5000)
 })
 
-test('summary intro phrases exist for both languages', () => {
+test('summary intro phrases exist for canonical languages', () => {
   assert.ok(SPEECH_PHRASES.en.summaryIntro)
-  assert.ok(SPEECH_PHRASES.ru.summaryIntro)
+  assert.ok(SPEECH_PHRASES.zh.summaryIntro)
 })
 
 test('built-in IT dictionary correctly replaces IT terms in Russian', () => {

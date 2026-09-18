@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { detectLang, speechPhrases, splitSentences, protectAbbreviations, restoreAbbreviations } from '../lib/text.js'
+import { detectLang, speechPhrases, SPEECH_PHRASES, splitSentences, protectAbbreviations, restoreAbbreviations } from '../lib/text.js'
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -12,7 +12,9 @@ test('detectLang detects Chinese CJK characters accurately', () => {
   assert.equal(detectLang('Hello world, how are you?'), 'en')
 })
 
-test('speechPhrases returns accurate localized templates for zh, en, ru', () => {
+test('speechPhrases returns canonical EN and ZH templates and falls back for others', () => {
+  assert.deepEqual(Object.keys(SPEECH_PHRASES), ['en', 'zh'])
+
   const zh = speechPhrases('zh-CN')
   assert.match(zh.codeBlock, /代码块/)
   assert.match(zh.table, /表格/)
@@ -22,7 +24,11 @@ test('speechPhrases returns accurate localized templates for zh, en, ru', () => 
   assert.match(en.codeBlock, /code block/)
 
   const ru = speechPhrases('ru-RU')
-  assert.match(ru.codeBlock, /блок кода/)
+  assert.equal(ru, SPEECH_PHRASES.en)
+})
+
+test('lib/text.js has no Russian UI strings in SPEECH_PHRASES', () => {
+  assert.equal(SPEECH_PHRASES.ru, undefined, 'ru dictionary must not be in core SPEECH_PHRASES')
 })
 
 test('smart tokenizer protects file extensions and list numbering', () => {

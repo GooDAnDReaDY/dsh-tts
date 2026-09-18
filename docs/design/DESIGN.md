@@ -98,6 +98,7 @@
 - 2026-09-10 — Settings card coverage (#88): user-facing schema fields `maxChars`, `sentenceChars`, `timeoutMs`, `maxQueue`, `openaiBaseUrl`, `mimoBaseUrl`, `mimoFormat`, `minimaxBin` live in the Advanced block. `*KeyEnv` fields name credential slots and stay config-only (keys are written via the chain editor / `/dsh-tts/credential`). `settings.section` remains fallback-only with a unit test.
 
 - 2026-09-18 — Fail-closed request trust policy (#119): isTrustedSettingsRequest enforces strict fail-closed validation. Accepts loopback IP, same-origin/same-site sec-fetch-site, matching origin/host header pair, or Bearer auth token. /credential endpoint never leaks secret key values.
+- 2026-09-18 — Canonical EN+ZH Localization Audit & Domain TTS Pronunciation Boundary (#121): SPEECH_PHRASES contains only canonical EN and ZH dictionaries (Russian translations delegated to @goodandready/dsh-russian-lang issue #200). Voice preview probing defaults to 'Voice check.' (EN) or '语音合成测试。' (ZH). Domain TTS pronunciation rules (BUILTIN_IT_DICTIONARY in lib/text.js and lib/client.js) and sentence boundary abbreviation protection (PROTECTED_ABBREVIATIONS) are explicit domain synthesis data for TTS engines, NOT UI strings, and remain in plugin core.
 
 ## Superseded notes
 Earlier free-form notes under docs/superpowers/ are retired; this file and docs/plans/ are canonical.
