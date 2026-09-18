@@ -1,7 +1,7 @@
-# DESIGN.md — @goodandready/dsh-tts
+# Design Contract: @goodandready/dsh-tts
 
-## Product / Purpose
-- Назначение: Text-to-Speech (TTS) для DeepSeek Harness — голосовое озвучивание ответов агентов в Web UI с гибкой цепочкой провайдеров (fallback chain), локальными моделями (Kokoro-82M, F5-TTS) и облачными API.
+- Продукт: Плагин озвучивания ответов агента (Text-to-Speech) для DeepSeek Harness.
+- Владелец: Team GoodAndReady.
 - Аудитория: Пользователи и разработчики DeepSeek Harness, которым требуется голосовой интерфейс, режим hands-free или duplex-диалог.
 - Статус: Active / Production.
 
@@ -52,7 +52,7 @@
   - Карточка с padding 14px 16px в шапке, отступы между полями 12px, адаптивные flex-строки.
 - Accessibility:
   - `aria-expanded` на кнопке раскрытия карточки.
-  - Поддержка горячих клавиш: `Ctrl+Esc` (пауза), `Alt+S` / `Alt+Ы` (стоп), `Alt+Right` (пропуск текущей фразы).
+  - Поддержка горячих клавиш: `Ctrl+Esc` (пауза), `Alt+KeyS` (стоп), `Alt+Right` (пропуск текущей фразы).
 
 ## Components And States
 - Компоненты:
@@ -98,7 +98,7 @@
 - 2026-09-10 — Settings card coverage (#88): user-facing schema fields `maxChars`, `sentenceChars`, `timeoutMs`, `maxQueue`, `openaiBaseUrl`, `mimoBaseUrl`, `mimoFormat`, `minimaxBin` live in the Advanced block. `*KeyEnv` fields name credential slots and stay config-only (keys are written via the chain editor / `/dsh-tts/credential`). `settings.section` remains fallback-only with a unit test.
 
 - 2026-09-18 — Fail-closed request trust policy (#119): isTrustedSettingsRequest enforces strict fail-closed validation. Accepts loopback IP, same-origin/same-site sec-fetch-site, matching origin/host header pair, or Bearer auth token. /credential endpoint never leaks secret key values.
-- 2026-09-18 — Canonical EN+ZH Localization Audit & Domain TTS Pronunciation Boundary (#121): SPEECH_PHRASES contains only canonical EN and ZH dictionaries (Russian translations delegated to @goodandready/dsh-russian-lang issue #248). Voice preview probing defaults to 'Voice check.' (EN) or '语音合成测试。' (ZH). Domain TTS pronunciation rules (BUILTIN_IT_DICTIONARY in lib/text.js and lib/client.js) and sentence boundary abbreviation protection (PROTECTED_ABBREVIATIONS) are explicit domain synthesis data for TTS engines, NOT UI strings, and remain in plugin core.
+- 2026-09-18 — Canonical EN+ZH Localization Audit & Strict Source Zero-Cyrillic Boundary (#121): SPEECH_PHRASES contains only canonical EN and ZH dictionaries. Core lib/ source code strictly purged of all hardcoded Russian pronunciation rules, Russian abbreviations, Cyrillic literals, and masked unicode escapes. BUILTIN_IT_DICTIONARY in core is empty by default; all Russian language pronunciation dictionaries and localization are 100% delegated to @goodandready/dsh-russian-lang (Gitea issue #248). Automated unit test in test/features_en_zh.test.mjs enforces zero Cyrillic literals, zero masked escapes, and zero lang: 'ru' rules in lib/.
 - 2026-09-18 — Repository Hygiene & Public Tree Sanitization (#122): Internal documentation and platform configuration files (AGENTS.md, index.md, docs/plans/, docs/architecture/, docs/deployment/, docs/testing/, .gitea/) are untracked from git index and added to .gitignore. Only product design contract docs/design/DESIGN.md is tracked in repository.
 
 ## Superseded notes
@@ -111,4 +111,3 @@ Earlier free-form notes under docs/superpowers/ are retired; this file and docs/
 - **Audio Clip Export**: Экспорт озвученных фраз в аудиофайл (`exportAudioClip(text)`) с кнопкой мгновенного скачивания `⤓` в `SpeakerControl` и списке недавних реплик.
 - **Subagent Persona Matrix & Auto-detection**: Опция `autoDetectSubagent` (boolean, default true) в конфигурации и карточке настроек. Автоматическое определение субагентов по метаданным сообщения (`subagent`, `agent`, `author`, `name`) с переключением голоса и стиля SSML.
 - **Client Bundle Size**: Оптимизированный размер бандла (`< 92 KiB` minified/packed), полное покрытие тестами (108 unit-тестов).
-
