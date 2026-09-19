@@ -2,6 +2,16 @@
 
 Notable changes to `@goodandready/dsh-tts`.
 
+## 0.4.18
+
+### Fixed
+- **Settings reachable again on the plugin's own page**: the current DSH core
+  (0.1.6-alpha.2) renders a plugin's configuration page only for entries registered
+  in the plugin-list seat `plugins.item`. `TtsRowConfig` is now registered there too
+  (`id: 'dsh-tts'`, order 60, static label); the row seat and the legacy
+  `settings.plugin.item` card stay as fallbacks. Sources edited in `lib/client-src`,
+  `lib/client.js` rebuilt.
+
 ## 0.4.17
 
 ### Added
