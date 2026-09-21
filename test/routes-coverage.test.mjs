@@ -131,7 +131,11 @@ test('routes.js: /dsh-tts/stats returns statistics', async () => {
   })
 
   const statsRoute = ctx.routes.get('/dsh-tts/stats')
-  const { req, res } = mockReqRes({ method: 'GET' })
+  const { req: crossReq, res: crossRes } = mockReqRes({ method: 'GET', headers: { 'sec-fetch-site': 'cross-site' } })
+  await statsRoute.handler(crossReq, crossRes)
+  assert.equal(crossRes.statusCode, 403)
+
+  const { req, res } = mockReqRes({ method: 'GET', headers: { 'sec-fetch-site': 'same-origin' } })
   await statsRoute.handler(req, res)
   assert.equal(res.statusCode, 200)
   const json = JSON.parse(res.body)
@@ -154,4 +158,32 @@ test('stream-hub.js: subscriber registration, broadcast, and cleanup', () => {
   removeStreamSubscriber(sub1)
   clearStreamSubscribers()
   assert.equal(sub2.ended, true)
+})
+
+test('routes.js: integrations and stats reject cross-site reads', async () => {
+  const ctx = makeCtx()
+  registerHttpRoutes(ctx, {
+    live: () => ({}),
+    modelManager: {},
+    stats: { total: 1, cacheHits: 0, errors: 0, providers: {} },
+    speechCache: { clear: async () => 0 },
+    cleanText: (t) => t,
+    synthesize: async () => ({}),
+    credentialsView: async () => ({}),
+    configResponse: () => ({}),
+    storeProviderKey: async () => '',
+    clearProviderKey: async () => '',
+    pending: [],
+    getSettingsApi: () => null,
+    validateConfig: () => ({})
+  })
+  for (const routePath of ['/dsh-tts/integrations', '/dsh-tts/stats']) {
+    const route = ctx.routes.get(routePath)
+    const { req, res } = mockReqRes({ method: 'GET', headers: { 'sec-fetch-site': 'cross-site' } })
+    await route.handler(req, res)
+    assert.equal(res.statusCode, 403, routePath)
+    const trusted = mockReqRes({ method: 'GET', headers: { 'sec-fetch-site': 'same-origin' } })
+    await route.handler(trusted.req, trusted.res)
+    assert.equal(trusted.res.statusCode, 200, routePath)
+  }
 })
