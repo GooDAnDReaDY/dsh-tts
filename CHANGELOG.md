@@ -2,7 +2,12 @@
 
 Notable changes to `@goodandready/dsh-tts`.
 
-## 0.4.18
+## 0.4.19
+
+### Fixed
+- **Integration and cache stats reads require a trusted settings request.** `GET /dsh-tts/integrations` and `GET /dsh-tts/stats` now return 403 for a cross-site caller, the same rule as the other settings routes.
+- **Removed the unused Kokoro WAV encoder.** Local Kokoro inference is not bundled, and nothing called `pcmFloat32ToWav`.
+
 
 ### Fixed
 - **Settings reachable again on the plugin's own page**: the current DSH core
