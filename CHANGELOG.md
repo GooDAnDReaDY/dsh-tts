@@ -2,6 +2,11 @@
 
 Notable changes to `@goodandready/dsh-tts`.
 
+## 0.4.21
+
+### Fixed
+- Settings no longer wait on the removed settingsScope service. The client uses configForms (#137).
+
 ## 0.4.19
 
 ### Fixed
