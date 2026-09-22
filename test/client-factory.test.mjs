@@ -31,7 +31,7 @@ test('client factory returns apply after CommonJS shim', () => {
   })
   assert.equal(typeof exported.apply, 'function')
   assert.ok(Array.isArray(exported.inject))
-  assert.ok(exported.inject.includes('settingsScope'), 'client module must inject settingsScope')
+  assert.ok(exported.inject.includes('configForms'), 'client module must inject configForms')
 })
 
 

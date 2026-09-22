@@ -67,8 +67,7 @@ test('client registers surfaces behaviorally in sandboxed browser runtime', () =
     settings: {
       card(desc, comp) { registered['settings.card'] = { desc, comp } },
     },
-    settingsScope: {
-      bind() { return { subscribe() {}, getSnapshot() { return { status: 'ready', value: {} } } } },
+    configForms: { get() { return { subscribe() {}, getSnapshot() { return { status: 'ready', value: {} } } } },
     },
     webServer: { hasRoute() { return true } },
     effect(fn) { return fn() },
