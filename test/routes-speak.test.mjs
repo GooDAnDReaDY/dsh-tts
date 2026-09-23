@@ -6,7 +6,7 @@ import { EventEmitter } from 'node:events'
 function mockReqRes({ method = 'POST', body = '', headers = {} } = {}) {
   const req = new EventEmitter()
   req.method = method
-  req.headers = headers
+  req.headers = { 'sec-fetch-site': 'same-origin', ...headers }
   req.url = '/dsh-tts/speak'
   const res = {
     statusCode: 0,
@@ -138,4 +138,60 @@ test('config PUT validates via validateConfig from api', async () => {
   assert.doesNotMatch(src, /parsed = Config\(/, 'must not call free Config identifier')
   const indexSrc = readFileSync(new URL('../lib/index.js', import.meta.url), 'utf8')
   assert.match(indexSrc, /validateConfig:\s*\(obj\)\s*=>\s*Config\(obj\)/, 'apply must pass Config wrapper')
+})
+
+
+test('speak handler returns 403 forbidden on untrusted cross-site request', async () => {
+  const ctx = makeCtx()
+  let synthCalled = false
+  const api = {
+    live: () => ({ language: 'en', maxChars: 0, chain: [], roles: {}, timeoutMs: 50 }),
+    modelManager: {},
+    stats: {},
+    speechCache: null,
+    cleanText: (raw) => String(raw || '').trim(),
+    synthesize: async () => { synthCalled = true; return {} },
+    credentialsView: () => ({}),
+    configResponse: () => ({ ok: true }),
+    storeProviderKey: async () => {},
+    clearProviderKey: async () => {},
+    pending: () => [],
+  }
+  registerHttpRoutes(ctx, api)
+  const speak = ctx.routes.find((r) => r && r.path === '/dsh-tts/speak')
+  const { req, res } = mockReqRes({ body: JSON.stringify({ text: 'hello' }), headers: { 'sec-fetch-site': 'cross-site' } })
+  await speak.handler(req, res)
+  assert.equal(res.statusCode, 403)
+  assert.equal(synthCalled, false)
+  const parsed = JSON.parse(res.body)
+  assert.equal(parsed.ok, false)
+  assert.equal(parsed.error.code, 'forbidden')
+})
+
+test('stream and pending handlers return 403 forbidden on untrusted cross-site request', async () => {
+  const ctx = makeCtx()
+  const api = {
+    live: () => ({ language: 'en' }),
+    modelManager: {},
+    stats: {},
+    speechCache: null,
+    cleanText: (t) => t,
+    synthesize: async () => ({}),
+    credentialsView: () => ({}),
+    configResponse: () => ({ ok: true }),
+    storeProviderKey: async () => {},
+    clearProviderKey: async () => {},
+    pending: () => [],
+  }
+  registerHttpRoutes(ctx, api)
+  
+  const stream = ctx.routes.find((r) => r && r.path === '/dsh-tts/stream')
+  const { req: sReq, res: sRes } = mockReqRes({ method: 'GET', headers: { 'sec-fetch-site': 'cross-site' } })
+  await stream.handler(sReq, sRes)
+  assert.equal(sRes.statusCode, 403)
+
+  const pending = ctx.routes.find((r) => r && r.path === '/dsh-tts/pending')
+  const { req: pReq, res: pRes } = mockReqRes({ method: 'GET', headers: { 'sec-fetch-site': 'cross-site' } })
+  await pending.handler(pReq, pRes)
+  assert.equal(pRes.statusCode, 403)
 })

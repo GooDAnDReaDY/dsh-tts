@@ -2,6 +2,11 @@
 
 Notable changes to `@goodandready/dsh-tts`.
 
+## 0.4.22
+
+### Fixed
+- Enforce fail-closed `isTrustedSettingsRequest(req)` validation on `/stream`, `/pending`, and `/speak` HTTP handlers to reject untrusted cross-site requests with 403 Forbidden (#136).
+
 ## 0.4.21
 
 ### Fixed
