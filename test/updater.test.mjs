@@ -85,3 +85,20 @@ test('updater: registerPluginUpdater binds route to ctx.webServer', async () => 
   assert.equal(typeof registered[0].handler, 'function')
   assert.equal(typeof cleanup, 'function')
 })
+
+test('updater: prerelease semver transitions are recognized as updates (#120)', () => {
+  assert.equal(isNewerVersion('0.4.10-alpha.1', '0.4.10'), true)
+  assert.equal(isNewerVersion('0.4.10-rc.1', '0.4.10-rc.2'), true)
+  assert.equal(isNewerVersion('0.4.10', '0.4.10-rc.1'), false)
+})
+
+test('updater: client bundle includes PluginUpdaterBlock and renders update UI (#120)', async () => {
+  const { readFileSync } = await import('node:fs')
+  const clientSrc = readFileSync(new URL('../lib/client.js', import.meta.url), 'utf8')
+  assert.match(clientSrc, /function PluginUpdaterBlock/, 'client must define PluginUpdaterBlock')
+  assert.match(clientSrc, /React\.createElement\(PluginUpdaterBlock/, 'TtsSection must render PluginUpdaterBlock')
+  assert.match(clientSrc, /\/api\/dsh-tts\/update/, 'PluginUpdaterBlock must target /api/dsh-tts/update')
+  assert.match(clientSrc, /updaterTitle/, 'client must reference updaterTitle locale key')
+  assert.match(clientSrc, /updaterUpdateNow/, 'client must reference updaterUpdateNow locale key')
+  assert.match(clientSrc, /updaterSuccess/, 'client must reference updaterSuccess locale key')
+})

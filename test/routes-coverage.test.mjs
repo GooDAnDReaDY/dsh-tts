@@ -187,3 +187,38 @@ test('routes.js: integrations and stats reject cross-site reads', async () => {
     assert.equal(trusted.res.statusCode, 200, routePath)
   }
 })
+
+
+test('routes.js: /dsh-tts/models/status rejects untrusted cross-site reads', async () => {
+  const ctx = makeCtx()
+  registerHttpRoutes(ctx, {
+    live: () => ({}),
+    modelManager: {
+      listStatus: async () => ({ kokoro: { id: 'kokoro', installed: false } }),
+    },
+    stats: { total: 0, cacheHits: 0, errors: 0, providers: {} },
+    speechCache: { clear: async () => 0 },
+    cleanText: (t) => t,
+    synthesize: async () => ({}),
+    credentialsView: async () => ({}),
+    configResponse: () => ({}),
+    storeProviderKey: async () => '',
+    clearProviderKey: async () => '',
+    pending: [],
+    getSettingsApi: () => null,
+    validateConfig: () => ({})
+  })
+  const statusRoute = ctx.routes.get('/dsh-tts/models/status')
+  assert.ok(statusRoute, 'models/status route must be registered')
+
+  const { req: crossReq, res: crossRes } = mockReqRes({ method: 'GET', headers: { 'sec-fetch-site': 'cross-site' } })
+  await statusRoute.handler(crossReq, crossRes)
+  assert.equal(crossRes.statusCode, 403)
+
+  const { req, res } = mockReqRes({ method: 'GET', headers: { 'sec-fetch-site': 'same-origin' } })
+  await statusRoute.handler(req, res)
+  assert.equal(res.statusCode, 200)
+  const json = JSON.parse(res.body)
+  assert.equal(json.ok, true)
+  assert.ok(json.models.kokoro)
+})

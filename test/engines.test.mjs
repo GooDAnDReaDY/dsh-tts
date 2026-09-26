@@ -74,3 +74,69 @@ test('ModelManager handles install, status, and delete with mocked fetch', async
     await fs.promises.rm(tmpRoot, { recursive: true, force: true }).catch(() => {})
   }
 })
+
+
+test('ModelManager redacts absolute host paths from getStatus and listStatus', async () => {
+  const tmpRoot = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'dsh-tts-manager-path-test-'))
+  try {
+    const mm = createModelManager({ root: tmpRoot })
+    const status = await mm.getStatus('kokoro')
+    assert.equal(status.path, undefined, 'status must not expose host path')
+    const list = await mm.listStatus()
+    for (const item of Object.values(list)) {
+      assert.equal(item.path, undefined, 'listStatus must not expose host path')
+    }
+  } finally {
+    await fs.promises.rm(tmpRoot, { recursive: true, force: true }).catch(() => {})
+  }
+})
+
+test('ModelManager tracks sanitized errors on install failure and clears on recovery', async () => {
+  const tmpRoot = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'dsh-tts-manager-err-test-'))
+  try {
+    let shouldFail = true
+    const mockFetch = async (url) => {
+      if (shouldFail) {
+        throw new Error(`Failed to fetch from ${url}`)
+      }
+      return {
+        ok: true,
+        headers: new Map([['content-length', '1024']]),
+        arrayBuffer: async () => Buffer.alloc(1024, 1),
+      }
+    }
+    const mm = createModelManager({ root: tmpRoot, fetchImpl: mockFetch })
+
+    // 1. Initial state: not installed, not failed
+    const st1 = await mm.getStatus('kokoro')
+    assert.equal(st1.installed, false)
+    assert.equal(st1.failed, false)
+    assert.equal(st1.error, null)
+
+    // 2. Failed install
+    await assert.rejects(async () => {
+      await mm.installModel('kokoro', { fetchImpl: mockFetch })
+    }, /Failed to fetch/)
+
+    const stFailed = await mm.getStatus('kokoro')
+    assert.equal(stFailed.installed, false)
+    assert.equal(stFailed.failed, true)
+    assert.ok(stFailed.error, 'must report error message')
+    assert.doesNotMatch(stFailed.error, /https?:\/\//, 'raw URL must be sanitized')
+
+    // 3. Recovery via successful install
+    shouldFail = false
+    const stRecovered = await mm.installModel('kokoro', { fetchImpl: mockFetch })
+    assert.equal(stRecovered.installed, true)
+    assert.equal(stRecovered.failed, false)
+    assert.equal(stRecovered.error, null)
+
+    // 4. Delete clears installed and error
+    const stDeleted = await mm.deleteModel('kokoro')
+    assert.equal(stDeleted.installed, false)
+    assert.equal(stDeleted.failed, false)
+    assert.equal(stDeleted.error, null)
+  } finally {
+    await fs.promises.rm(tmpRoot, { recursive: true, force: true }).catch(() => {})
+  }
+})
