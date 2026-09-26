@@ -2,6 +2,19 @@
 
 Notable changes to `@goodandready/dsh-tts`.
 
+## 0.4.23
+
+### Security
+- **Strict Settings Request Trust Policy**: Eliminated `same-site` and arbitrary auth header bypasses in `isTrustedSettingsRequest`. Rejects non-same-origin callers, validates matching origin/host pair with loopback remote address, and requires explicit token verification against `DSH_AUTH_TOKEN`/`DSH_TOKEN` (#119).
+- **Protected Model Status & Path Redaction**: `GET /dsh-tts/models/status` now requires `isTrustedSettingsRequest` authorization (returns 403 for untrusted/cross-site requests) and completely redacts absolute filesystem paths from model state descriptors (#139).
+
+### Added
+- **One-Click Updater in Settings Card**: Integrated a unified live updater block (`PluginUpdaterBlock`) into the settings card, displaying current version, latest npm release badge, update execution button, and DSH restart instructions connected to `/dsh-tts/updater` and `/api/dsh-tts/update` (#120).
+- **Durable Model Download Failure Tracking**: `modelManager` now tracks sanitized download failure states across engines, reports errors through protected status (`failed: true`, `error: sanitizedMessage`), and clears errors on retry or deletion (#141).
+
+### Packaging
+- **Clean Runtime-Only Package Boundary**: Updated `package.json` files allowlist to exclude `scripts/` (build/release tooling) and `lib/client-src/` from published npm archive, preserving strict runtime-only surface (#140).
+
 ## 0.4.22
 
 ### Fixed
