@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.4.26
+
+### Fixed
+- **Cloud Timeout Cancellation Forwarding** (#145): Fixed unquoted `abort` identifier in `lib/providers.js:21` inside `withCloudTimeout()`. Passing an active `AbortSignal` in `synthesize()` now cleanly attaches cancellation listeners without throwing `ReferenceError`.
+- **Settings Save Handler Runtime Crash** (#146): Added a defensive `settingsApi` adapter to `lib/index.js` and bound `getSettingsApi()` in `apply()`. `PUT /dsh-tts/config` now updates live configuration and persists changes without `ReferenceError: settingsApi is not defined`.
+- **Client Bundle Parity Verification** (#147): Added non-destructive `--check` mode to `scripts/build-client.mjs`, registered `check:client` npm script, and added automated test in `test/client-redesign.test.mjs` to prevent bundle drift.
+
 ## 0.4.24
 
 ### Fixed
