@@ -130,3 +130,45 @@ test('peer ranges accept the 0.1.7 and 0.2.0 DSH package lines', async () => {
     assert.ok(semver.satisfies('0.1.7-rc.2', range), name + ' ' + range + ' must accept 0.1.7-rc.2')
   }
 })
+
+test('PUT /dsh-tts/config executes through real apply wiring without ReferenceError (#146)', async () => {
+  const { apply } = await import('../lib/index.js')
+  let registeredConfigRoute = null
+  const fakeCtx = {
+    on: () => {},
+    effect: (fn) => fn(),
+    webServer: {
+      register: (route) => {
+        if (route.path === '/dsh-tts/config') registeredConfigRoute = route
+      },
+    },
+    tools: { register: () => {} },
+    credentials: { resolve: () => null, describe: () => null },
+  }
+
+  apply(fakeCtx, { speakReplies: false, rate: 1.0 })
+  assert.ok(registeredConfigRoute, 'expected /dsh-tts/config route to be registered')
+
+  const fakeReq = {
+    method: 'PUT',
+    headers: { host: '127.0.0.1:3000', 'sec-fetch-site': 'same-origin' },
+    socket: { remoteAddress: '127.0.0.1' },
+    on: (evt, cb) => {
+      if (evt === 'data') cb(Buffer.from(JSON.stringify({ config: { speakReplies: true, rate: 1.2 } })))
+      if (evt === 'end') cb()
+    },
+  }
+
+  let statusCode = 0
+  let responseData = null
+  const fakeRes = {
+    writeHead: (code, headers) => { statusCode = code },
+    end: (body) => { responseData = JSON.parse(body) },
+  }
+
+  await registeredConfigRoute.handler(fakeReq, fakeRes)
+  assert.equal(statusCode, 200, 'expected HTTP 200 on config update')
+  assert.equal(responseData.ok, true)
+  assert.equal(responseData.config.speakReplies, true)
+  assert.equal(responseData.config.rate, 1.2)
+})

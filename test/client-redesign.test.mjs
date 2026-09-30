@@ -1,5 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
+import { spawnSync } from 'node:child_process'
 import { readFileSync, readdirSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
@@ -29,4 +30,9 @@ test('client includes unified dts-page-title and telemetry badges', () => {
   assert.match(client, /dts-page-title/, 'must use dts-page-title styling')
   assert.match(client, /statusOnline/, 'must localize statusOnline')
   assert.match(client, /statusOffline/, 'must localize statusOffline')
+})
+
+test('client build parity check passes with scripts/build-client.mjs --check (#147)', () => {
+  const res = spawnSync(process.execPath, [path.join(root, 'scripts/build-client.mjs'), '--check'], { encoding: 'utf8' })
+  assert.equal(res.status, 0, res.stderr || res.stdout)
 })
