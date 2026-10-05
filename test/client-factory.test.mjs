@@ -145,5 +145,5 @@ test('client source gates writable on ready snapshot status', () => {
   const src = readFileSync(srcPath, 'utf8')
   assert.equal(src.includes('const writable = true'), false, 'writable must not be hardcoded true')
   assert.match(src, /snap\.status === 'ready'/, 'must check snap.status ready')
-  assert.match(src, /writable = !scope \? true : \(ready && snap\.writable !== false\)/, 'writable must gate on ready and snap.writable')
+  assert.match(src, /writable = ready && snap\.writable !== false/, 'writable must gate on ready and snap.writable')
 })

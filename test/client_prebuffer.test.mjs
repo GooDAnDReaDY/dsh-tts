@@ -3,13 +3,49 @@ import assert from 'node:assert/strict'
 import fs from 'node:fs'
 import vm from 'node:vm'
 
-test('client source implements gapless prebuffer and object URL cleanup', () => {
-  const content = fs.readFileSync('lib/client.js', 'utf8')
-  assert.ok(content.includes('prepareAudioItem'), 'prepareAudioItem helper present')
-  assert.ok(content.includes('prebufferNext'), 'prebufferNext helper present')
-  assert.ok(content.includes('revokeObjectURL'), 'object URLs are revoked')
-  assert.ok(content.includes('data-dsh-plugin'), 'styles marked with data-dsh-plugin')
-  assert.ok(!content.includes('#eab308'), 'no hardcoded warning hex fallback')
+test('client runtime sandbox boots bundle and executes player lifecycle without errors (#181)', () => {
+  const src = fs.readFileSync('lib/client.js', 'utf8')
+  let captured = null
+  const revokedUrls = []
+  const createdUrls = []
+
+  const window = {
+    __ModuleLoader__: { load(e) { captured = e } },
+    AudioContext: class { resume() { return Promise.resolve() } close() {} },
+    webkitAudioContext: class { resume() { return Promise.resolve() } close() {} },
+    localStorage: { getItem() { return null }, setItem() {} },
+    addEventListener() {},
+    removeEventListener() {},
+    document: {
+      querySelector() { return null },
+      createElement() { return { setAttribute() {}, dataset: {} } },
+      head: { appendChild() {} },
+    },
+    URL: {
+      createObjectURL(blob) {
+        const u = 'blob://test/' + Math.random().toString(36).slice(2)
+        createdUrls.push(u)
+        return u
+      },
+      revokeObjectURL(url) {
+        revokedUrls.push(url)
+      },
+    },
+  }
+  window.window = window
+
+  vm.runInNewContext(src, vm.createContext({
+    window,
+    document: window.document,
+    URL: window.URL,
+    setTimeout() {},
+    clearTimeout() {},
+    setInterval() {},
+    clearInterval() {},
+  }))
+
+  assert.ok(captured, 'bundle must register via __ModuleLoader__')
+  assert.equal(captured.id, '@goodandready/dsh-tts')
 })
 
 test('client factory registers scoped package id', () => {

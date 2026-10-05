@@ -144,6 +144,15 @@ test('PUT /dsh-tts/config executes through real apply wiring without ReferenceEr
     },
     tools: { register: () => {} },
     credentials: { resolve: () => null, describe: () => null },
+    get: (name) => {
+      if (name === 'settings') {
+        return {
+          describe: async () => ({ revision: 1 }),
+          replace: async () => {},
+        }
+      }
+      return null
+    },
   }
 
   apply(fakeCtx, { speakReplies: false, rate: 1.0 })
