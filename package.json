@@ -1,6 +1,6 @@
 {
   "name": "@goodandready/dsh-tts",
-  "version": "0.4.23",
+  "version": "0.4.28",
   "description": "Text-to-speech for DeepSeek Harness: speak agent replies in the Web UI with a provider fallback chain (OpenAI, ElevenLabs, Google, Azure, Groq, Deepgram, OpenRouter, Edge, Piper, eSpeak).",
   "license": "MIT",
   "type": "module",
@@ -45,7 +45,8 @@
   "scripts": {
     "test": "node --test test/*.test.mjs",
     "build:client": "node scripts/build-client.mjs",
-    "pretest": "node scripts/build-client.mjs"
+    "pretest": "node scripts/build-client.mjs",
+    "check:client": "node scripts/build-client.mjs --check"
   },
   "dsh": {
     "bundle": {
@@ -63,11 +64,11 @@
   },
   "peerDependencies": {
     "@deepseek-ai/cordis": "^4.0.1",
-    "@deepseek-ai/dsh-tools": "^0.1.0-rc.6",
-    "@deepseek-ai/dsh-credentials": "^0.1.0-rc.6",
-    "@deepseek-ai/dsh-host-webserver": "^0.1.0-rc.6",
-    "@deepseek-ai/dsh-settings": "^0.1.0-rc.6",
-    "@deepseek-ai/schemastery": "^3.18.1"
+    "@deepseek-ai/dsh-tools": "^0.1.7-rc.2 || ^0.2.0-rc.1",
+    "@deepseek-ai/dsh-credentials": "^0.1.7-rc.2 || ^0.2.0-rc.1",
+    "@deepseek-ai/dsh-host-webserver": "^0.1.7-rc.2 || ^0.2.0-rc.1",
+    "@deepseek-ai/dsh-settings": "^0.1.7-rc.2 || ^0.2.0-rc.1",
+    "@deepseek-ai/schemastery": "^3.18.4"
   },
   "publishConfig": {
     "access": "public"

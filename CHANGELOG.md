@@ -1,5 +1,56 @@
 # Changelog
 
+## 0.4.28
+
+### Fixed
+- **Settings Contracts & Schemastery Validation** (#151, #152, #153, #155, #187, #188, #189):
+  - Made all 9 previously static fields volatile and ensured living Volatile boxes are unwrapped dynamically in live() without stale snapshots.
+  - Constrained maxQueue with .step(1).min(0) to reject non-integer and negative queue limits.
+  - Added optimistic revision validation and rollback on conflict (HTTP 409) in settings saving.
+  - Enforced isTrustedSettingsRequest auth guards on GET /dsh-tts/config and GET /dsh-tts/status.
+  - Enforced contiguous sequence ordering in SSE synthesis chunks.
+
+- **Audio Pipeline, Cache & Concurrency** (#154, #156, #157, #166, #173, #174, #175, #186, #190):
+  - Sanitized and normalized text once in prepareSpeechText() before character limits or summary generation, eliminating double-clean pronunciation distortions.
+  - Fixed subagent voice override gating with autoDetectSubagent !== false.
+  - Extended cache and dedup fingerprints with endpoint, models, voices, role, and language.
+  - Added admission concurrency throttle and semaphore for maxQueue synthesis reservations.
+  - Implemented SSE subscriber backpressure tracking and dropped slow lagging subscribers (>512 KB buffer) with drain handling.
+  - Switched cache index to an in-memory Map to eliminate disk scans on eviction.
+  - Ensured speak_text tool returns metadata and delivers audio to pending queue/SSE without dumping base64 into LLM context.
+
+- **Client Player & UI Parity** (#158, #159, #160, #161, #162, #163, #164, #165, #167, #168, #169, #176):
+  - Unified EventSource listener connection in client, preventing duplicate audio channels.
+  - Ensured skipCurrent() halts active playback immediately, and preview/replay route through the unified player.
+  - Gracefully handled browser autoplay restrictions (NotAllowedError), pausing the queue until user interaction.
+  - Kept compact recent/favorites history control visible in idle state.
+  - Registered updater routes inside ctx.effect() to properly unbind on plugin disposal.
+  - Enabled all 16 active providers in client UI, with secure key management and read-only indicators when settings scope is missing.
+  - Fixed sibling integration detection using Cordis services without relying on obsolete hasRoute.
+  - Re-anchored canonical defaults to English (en, en-US-AriaNeural) and achieved 100% parity between EN and ZH dictionaries.
+
+- **Model Weights Manager & System Hygiene** (#177, #178, #179, #180, #181, #182, #183, #184, #185):
+  - Stream chunk downloads now properly manage EventEmitter listeners without leaking error or drain handlers.
+  - Added synchronous concurrency lock per engine to share in-flight downloads and used unique nonce temporary file paths.
+  - Added minimum file size validation (minBytes / 1024 bytes) to reject truncated or error HTML downloads.
+  - Validated engine parameter in /dsh-tts/models/install and /dsh-tts/models/delete, returning HTTP 400 for unknown engines.
+  - Replaced tautological regex and source inspection tests with true runtime behavior tests.
+  - Isolated cache tests in temporary directories with automated cleanup.
+  - Synchronized README documentation with reality and strictly excluded internal dev docs (AGENTS.md, index.md, plans) from package distributions.
+  - Closes #151, #152, #153, #154, #155, #156, #157, #158, #159, #160, #161, #162, #163, #164, #165, #166, #167, #168, #169, #170, #171, #172, #173, #174, #175, #176, #177, #178, #179, #180, #181, #182, #183, #184, #185, #186, #187, #188, #189, #190, #191.
+
+## 0.4.27
+
+### Fixed
+- **Cloud Timeout Cancellation Forwarding** (#145): Fixed unquoted `abort` identifier in `lib/providers.js:21` inside `withCloudTimeout()`. Passing an active `AbortSignal` in `synthesize()` now cleanly attaches cancellation listeners without throwing `ReferenceError`.
+- **Settings Save Handler Runtime Crash** (#146): Added a defensive `settingsApi` adapter to `lib/index.js` and bound `getSettingsApi()` in `apply()`. `PUT /dsh-tts/config` now updates live configuration and persists changes without `ReferenceError: settingsApi is not defined`.
+- **Client Bundle Parity Verification** (#147): Added non-destructive `--check` mode to `scripts/build-client.mjs`, registered `check:client` npm script, and added automated test in `test/client-redesign.test.mjs` to prevent bundle drift.
+
+## 0.4.24
+
+### Fixed
+- **Peer gate on DSH 0.2.0-rc.1** (#58): DSH skips a profile bundle whose `peerDependencies` exclude the running version, so this plugin was absent from the profile with no error in the UI. Every `@deepseek-ai/dsh-*` peer now names both the 0.1.7-rc.2 and 0.2.0-rc.1 lines, because semver does not admit a prerelease of the next minor into a range that does not name it.
+
 Notable changes to `@goodandready/dsh-tts`.
 
 ## 0.4.23

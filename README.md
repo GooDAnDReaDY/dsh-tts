@@ -101,10 +101,10 @@ graph LR
 
 ### 4. 📚 Built-in IT Terminology Pronunciation Dictionary
 * **Pre-configured Lexicon**: Correct phonetic pronunciation for common technical abbreviations and developer terms:
-  - `SQL` $\rightarrow$ "сиквел"
-  - `Nginx` $\rightarrow$ "энджинкс"
-  - `Kubernetes` / `K8s` $\rightarrow$ "кубернетис"
-  - `Docker` $\rightarrow$ "докер", `API` $\rightarrow$ "апи", `JSON` $\rightarrow$ "джейсон", `YAML` $\rightarrow$ "ямл"
+  - `SQL` $\rightarrow$ "sequel"
+  - `Nginx` $\rightarrow$ "engine-x"
+  - `Kubernetes` / `K8s` $\rightarrow$ "coo-ber-net-ees" / "kates"
+  - `Docker` $\rightarrow$ "docker", `API` $\rightarrow$ "A-P-I", `JSON` $\rightarrow$ "jason", `YAML` $\rightarrow$ "yaml"
   - `GUI`, `CLI`, `CI/CD`, `PR`, `Regex`, `OAuth`, `HTTP`, `HTTPS`, `CPU`, `GPU`, `RAM`
 * **Interactive UI Editor**: Edit rules, preview phonetic substitutions with the **▶ Listen** button, and populate standard IT terms with one click.
 
@@ -135,7 +135,7 @@ graph LR
 | `f5` | Local F5-TTS GPU Daemon | `F5-TTS` | Default | *None* | Daemon ping only; **GPU inference not bundled** — fails honestly |
 | `elevenlabs` | ElevenLabs API | `eleven_multilingual_v2` | `Rachel` | `ELEVENLABS_API_KEY` | Ultra-realistic, emotional nuance |
 | `openai` | OpenAI Audio | `gpt-4o-mini-tts` / `tts-1` | `alloy` | `OPENAI_API_KEY` | High-quality industry standard |
-| `edge` | Microsoft Edge Online | `ru-RU-SvetlanaNeural` | `ru-RU-SvetlanaNeural` | *None* | **Free, high-fidelity neural TTS without API keys** |
+| `edge` | Microsoft Edge Online | `en-US-AriaNeural` | `en-US-AriaNeural` | *None* | **Free, high-fidelity neural TTS without API keys** |
 | `siliconflow` | SiliconFlow CosyVoice | `FunAudioLLM/CosyVoice2-0.5B` | Default | `SILICONFLOW_API_KEY` | State-of-the-art CosyVoice2 neural engine |
 | `deepinfra` | DeepInfra Kokoro | `hexgrad/Kokoro-82M` | Default | `DEEPINFRA_API_KEY` | Fast open-weights Kokoro synthesis |
 | `fireworks` | Fireworks AI | `kokoro` | Default | `FIREWORKS_API_KEY` | Ultra-low latency Kokoro inference |
@@ -225,6 +225,10 @@ Config-only (not in the card): `*KeyEnv` fields (`openaiKeyEnv`, `elevenlabsKeyE
 * `DELETE /dsh-tts/models/delete` — `{ engine: 'kokoro' | 'f5' }` → Removes local model files.
 * `GET /dsh-tts/integrations` — Status of sibling plugins (`dsh-voice`, `dsh-messenger-gateway`).
 * `GET /dsh-tts/status` — Returns active chain state, cache statistics, and engine readiness.
+* `DELETE /dsh-tts/cache` — Clears cached audio files.
+* `GET /dsh-tts/config` & `PUT /dsh-tts/config` — Retrieve and update settings revision.
+* `GET /dsh-tts/stats` & `DELETE /dsh-tts/stats` — Performance statistics and metrics reset.
+* `PUT /dsh-tts/credential` & `DELETE /dsh-tts/credential` — Securely store or remove cloud provider API keys.
 
 ---
 
