@@ -11,7 +11,7 @@ test('lib/routes.js registers integrations; index handles subagent roles', () =>
   const index = readFileSync(path.join(root, 'lib/index.js'), 'utf8')
   assert.match(routes, /path:\s*['"]\/dsh-tts\/integrations['"]/, 'integrations route must be registered')
   assert.ok(!routes.includes("path.join(process.cwd(), '..'"), 'must not probe sibling filesystem paths')
-  assert.match(routes, /hasRoute\(\'\/dsh-voice\/status\'\)/, 'must detect voice via runtime routes')
+  assert.match(routes, /isPluginOrServicePresent/, 'must detect voice via runtime registry/services')
   assert.match(index, /agentName/, 'must extract agentName from session or event')
   assert.match(index, /voiceDuplexEnabled/, 'Config must include voiceDuplexEnabled')
   assert.match(index, /vadBargeIn/, 'Config must include vadBargeIn')

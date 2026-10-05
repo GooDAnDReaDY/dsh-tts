@@ -1,30 +1,38 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
+import fs from 'node:fs'
+import path from 'node:path'
+import os from 'node:os'
 import { createSpeechCache, cacheKey } from '../lib/cache.js'
 import { splitSentences } from '../lib/text.js'
 import { registerHttpRoutes } from '../lib/routes.js'
 
 test('L1 RAM Audio Cache provides instant hits and LRU sync', async () => {
-  const cache = createSpeechCache({ root: '/tmp/test-l1-cache-' + Date.now(), maxBytes: 1024 * 1024 })
-  const key1 = cacheKey(['l1-test-phrase-1'])
-  const key2 = cacheKey(['l1-test-phrase-2'])
-  
-  await cache.put(key1, 'audio/mpeg', Buffer.from([1, 2, 3, 4]))
-  await cache.put(key2, 'audio/wav', Buffer.from([5, 6, 7, 8]))
+  const tmpRoot = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'dsh-tts-l1-'))
+  try {
+    const cache = createSpeechCache({ root: tmpRoot, maxBytes: 1024 * 1024 })
+    const key1 = cacheKey(['l1-test-phrase-1'])
+    const key2 = cacheKey(['l1-test-phrase-2'])
+    
+    await cache.put(key1, 'audio/mpeg', Buffer.from([1, 2, 3, 4]))
+    await cache.put(key2, 'audio/wav', Buffer.from([5, 6, 7, 8]))
 
-  // L1 RAM Hit
-  const hit1 = await cache.get(key1)
-  assert.ok(hit1, 'key1 hit expected')
-  assert.equal(hit1.mime, 'audio/mpeg')
-  assert.deepEqual([...hit1.audio], [1, 2, 3, 4])
+    // L1 RAM Hit
+    const hit1 = await cache.get(key1)
+    assert.ok(hit1, 'key1 hit expected')
+    assert.equal(hit1.mime, 'audio/mpeg')
+    assert.deepEqual([...hit1.audio], [1, 2, 3, 4])
 
-  const hit2 = await cache.get(key2)
-  assert.ok(hit2, 'key2 hit expected')
-  assert.equal(hit2.mime, 'audio/wav')
+    const hit2 = await cache.get(key2)
+    assert.ok(hit2, 'key2 hit expected')
+    assert.equal(hit2.mime, 'audio/wav')
 
-  // Miss
-  const miss = await cache.get(cacheKey(['missing-key']))
-  assert.equal(miss, null)
+    // Miss
+    const miss = await cache.get(cacheKey(['missing-key']))
+    assert.equal(miss, null)
+  } finally {
+    await fs.promises.rm(tmpRoot, { recursive: true, force: true }).catch(() => {})
+  }
 })
 
 test('splitSentences splits turn reply into parallel pipeline chunks', () => {

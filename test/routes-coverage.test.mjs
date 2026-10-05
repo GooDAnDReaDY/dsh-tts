@@ -68,8 +68,13 @@ test('routes.js: /dsh-tts/status handles GET and rejects other methods', async (
   await statusRoute.handler(pReq, pRes)
   assert.equal(pRes.statusCode, 405)
 
-  // GET should return 200
-  const { req: gReq, res: gRes } = mockReqRes({ method: 'GET' })
+  // Untrusted GET should return 403
+  const { req: uReq, res: uRes } = mockReqRes({ method: 'GET' })
+  await statusRoute.handler(uReq, uRes)
+  assert.equal(uRes.statusCode, 403)
+
+  // Trusted GET should return 200
+  const { req: gReq, res: gRes } = mockReqRes({ method: 'GET', headers: { 'sec-fetch-site': 'same-origin' } })
   await statusRoute.handler(gReq, gRes)
   assert.equal(gRes.statusCode, 200)
   const json = JSON.parse(gRes.body)
