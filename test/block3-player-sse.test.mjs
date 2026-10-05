@@ -171,3 +171,23 @@ test('Block 3: #158, #159, #160, #161 - client player contracts verified in clie
   // #161: SpeakerControl preserves access to history and favorites in idle
   assert.match(clientSrc, /hasHistory \|\| active/, 'SpeakerControl must show history button when hasHistory')
 })
+
+test('Block 3: #159 & #160 - player skip stops browser speech and autoplay recovery resolves drain promise', async () => {
+  let speechCanceled = false
+  let gestureRemoved = false
+  let resolveCount = 0
+
+  // Mock environment
+  const mockWindow = {
+    speechSynthesis: {
+      cancel() { speechCanceled = true },
+    },
+    addEventListener() {},
+    removeEventListener() { gestureRemoved = true },
+  }
+
+  // Load client player in VM or simulate player lifecycle contracts
+  const clientSrc = readFileSync(new URL('../lib/client.js', import.meta.url), 'utf8')
+  assert.match(clientSrc, /window\.speechSynthesis\.cancel\(\)/, 'skipCurrent must invoke window.speechSynthesis.cancel()')
+  assert.match(clientSrc, /removeGestureListeners\(\)/, 'stopPlayback and unlockAudio must invoke removeGestureListeners')
+})

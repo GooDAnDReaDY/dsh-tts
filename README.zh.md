@@ -47,9 +47,9 @@ graph LR
         Reply[💬 智能体生成文本] --> Scrub[智能过滤 & IT术语词典]
     end
 
-    subgraph Stream [低延迟流式音频 < 300ms]
+    subgraph Stream [实时流式音频播放]
         Scrub --> SSE[SSE /dsh-tts/stream]
-        SSE --> Worklet[AudioWorklet PCM 处理器]
+        SSE --> Player[Web Audio & HTML Audio 播放器]
     end
 
     subgraph Cache [性能缓存层]
@@ -90,8 +90,8 @@ graph LR
 * **Kokoro-82M / F5-TTS**：仅权重下载与状态展示。**推理未捆绑在本包中**，provider 会明确失败并继续 fallback。
 * **ModelManager 管理界面**：在设置中手动安装模型，实时显示下载进度条、SHA-256 校验和一键删除。无任何静默或自动下载。
 
-### 2. ⚡ 实时流式音频播放（延迟 < 300ms）
-* **AudioWorklet (`TTSWorklet`)**：高性能 Web Audio Worklet 处理器，以 24kHz 采样率无缝播放 Float32Array PCM 数据块，无可感知的爆音或缓冲区欠载。
+### 2. ⚡ 实时流式音频播放
+* **HTML Audio & Web Audio 播放器**：无缝队列音频播放，支持预缓冲、麦克风打断响应 (barge-in)、播放倍速控制以及浏览器原生语音故障回退。
 * **Server-Sent Events (SSE)**：专用 `/dsh-tts/stream` 路由将合成音频片段即时推送至浏览器。
 
 ### 3. 🎙️ 语音双工对话与 VAD 打断（配合 `@goodandready/dsh-voice`）
@@ -165,7 +165,7 @@ dsh plugin --profile web add @goodandready/dsh-tts
 API 密钥不写入插件设置，只在链编辑器粘贴，经 `PUT /dsh-tts/credential` 写入 DSH credential store。
 
 
-## ⚙️ 配置示例（`settings.yaml`）
+## ⚙️ 配置说明（DSH 设置面板）
 
 ```yaml
 dsh-tts:

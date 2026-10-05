@@ -1,3 +1,4 @@
+import { EventEmitter } from 'node:events'
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import fs from 'node:fs'
@@ -183,6 +184,93 @@ test('Block 5: #177 - streaming download with multiple chunks does not leak Even
     const mm = createModelManager({ root: tmpRoot, fetchImpl: mockFetch })
     const installed = await mm.installModel('kokoro', { fetchImpl: mockFetch })
     assert.equal(installed.installed, true)
+  } finally {
+    await fs.promises.rm(tmpRoot, { recursive: true, force: true }).catch(() => {})
+  }
+})
+
+test('Block 5: #180 - routes /models/install and /models/delete reject constructor, __proto__, toString', async () => {
+  const ctx = {
+    routes: new Map(),
+    webServer: { register(r) { ctx.routes.set(r.path, r) } },
+    effect(fn) { fn() },
+  }
+  const { registerHttpRoutes } = await import('../lib/routes.js')
+  registerHttpRoutes(ctx, {
+    modelManager: {
+      installModel: async () => ({ installed: false }),
+      deleteModel: async () => ({ installed: false }),
+      getStatus: async () => ({ installed: false }),
+    },
+  })
+
+  const installRoute = ctx.routes.get('/dsh-tts/models/install')
+  for (const malicious of ['constructor', '__proto__', 'toString', 'valueOf']) {
+    const emitter = new EventEmitter()
+    emitter.method = 'POST'
+    emitter.headers = { 'sec-fetch-site': 'same-origin' }
+    const res = {
+      statusCode: 200,
+      body: '',
+      writeHead(c) { this.statusCode = c },
+      end(d) { this.body = d },
+    }
+    const p = installRoute.handler(emitter, res)
+    emitter.emit('data', Buffer.from(JSON.stringify({ engine: malicious })))
+    emitter.emit('end')
+    await p
+    assert.equal(res.statusCode, 400, `${malicious} must be rejected with HTTP 400`)
+    assert.match(JSON.parse(res.body).error.message, /unknown engine/i)
+  }
+})
+
+test('Block 5: #179 - HTML error pages (>1 KB) fail integrity check and are not marked installed', async () => {
+  const tmpRoot = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'dsh-tts-html-test-'))
+  try {
+    const html404 = '<!DOCTYPE html><html><head><title>404 Not Found</title></head><body>' + 'x'.repeat(2000) + '</body></html>'
+    const mockFetch = async () => ({
+      ok: true,
+      headers: new Map([['content-length', String(html404.length)]]),
+      arrayBuffer: async () => Buffer.from(html404),
+    })
+
+    const mm = createModelManager({ root: tmpRoot, fetchImpl: mockFetch })
+    await assert.rejects(async () => {
+      await mm.installModel('kokoro', { fetchImpl: mockFetch })
+    }, /integrity check|invalid format/i)
+
+    const st = await mm.getStatus('kokoro')
+    assert.equal(st.installed, false, 'HTML error fixture must never be marked installed')
+  } finally {
+    await fs.promises.rm(tmpRoot, { recursive: true, force: true }).catch(() => {})
+  }
+})
+
+test('Block 5: #178 - cancelDownload awaits active writer cleanup before releasing map', async () => {
+  const tmpRoot = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'dsh-tts-cancel-wait-'))
+  try {
+    let aborted = false
+    let started = false
+    const mockFetch = async (url, opts) => {
+      started = true
+      opts.signal?.addEventListener('abort', () => { aborted = true })
+      if (opts.signal?.aborted) aborted = true
+      await new Promise((r) => setTimeout(r, 100))
+      return {
+        ok: true,
+        headers: new Map([['content-length', '1024']]),
+        arrayBuffer: async () => Buffer.alloc(1024, 1),
+      }
+    }
+
+    const mm = createModelManager({ root: tmpRoot, fetchImpl: mockFetch })
+    const p = mm.installModel('kokoro', { fetchImpl: mockFetch })
+    p.catch(() => {})
+    while (!started) await new Promise((r) => setTimeout(r, 5))
+    const canceled = await mm.cancelDownload('kokoro')
+    assert.equal(canceled, true)
+    assert.equal(aborted, true)
+    await p.catch(() => {})
   } finally {
     await fs.promises.rm(tmpRoot, { recursive: true, force: true }).catch(() => {})
   }
