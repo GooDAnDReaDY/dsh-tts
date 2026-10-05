@@ -129,3 +129,112 @@ test('Block 4: #168 - EN and ZH locale dictionaries have 100% key parity', () =>
   assert.match(content, /'subtitle': 'Text-to-speech for DeepSeek Harness'/)
   assert.match(content, /'subtitle': 'DeepSeek Harness 语音合成插件'/)
 })
+
+test('Block 4: #167 - Config defaults use canonical EN voice for Edge and eSpeak', async () => {
+  const { Config } = await import('../lib/index.js')
+  const c = Config({})
+  const chain = c.chain.get()
+  assert.ok(Array.isArray(chain))
+
+  const edgeEntry = chain.find((x) => x.provider === 'edge')
+  assert.ok(edgeEntry)
+  assert.equal(edgeEntry.voice, 'en-US-JennyNeural', 'Edge default voice must be en-US-JennyNeural')
+
+  const espeakEntry = chain.find((x) => x.provider === 'espeak')
+  assert.ok(espeakEntry)
+  assert.equal(espeakEntry.voice, 'en', 'eSpeak default voice must be en')
+})
+
+test('Block 4: #170 - Google TTS rejects unsupported audio/mpeg MIME with explicit error', async () => {
+  const deps = {
+    cfg: { googleKeyEnv: 'GEMINI_API_KEY' },
+    resolveKey: async () => 'test-key',
+    fetchImpl: async () => ({
+      ok: true,
+      json: async () => ({
+        candidates: [{
+          content: {
+            parts: [{
+              inlineData: {
+                mimeType: 'audio/mpeg',
+                data: Buffer.from('mp3-data').toString('base64'),
+              },
+            }],
+          },
+        }],
+      }),
+    }),
+  }
+
+  const providers = makeProviders(deps, {
+    signal: new AbortController().signal,
+    text: 'hello',
+    lang: 'en',
+    models: {},
+    voices: {},
+  })
+
+  const res = await providers.google()
+  assert.equal(res.ok, false)
+  assert.match(res.reason, /unsupported Google TTS MIME/i)
+})
+
+test('Block 4: #165 - UI integration state identifies nested integrations object and gates /speak', async () => {
+  const ctx = {
+    routes: new Map(),
+    webServer: {
+      register(r) { ctx.routes.set(r.path, r) },
+      routes: [{ path: '/dsh-voice/status' }, { path: '/dsh-messenger/status' }],
+    },
+    effect(fn) { fn() },
+  }
+  const { registerHttpRoutes } = await import('../lib/routes.js')
+  registerHttpRoutes(ctx, {
+    live: () => ({ messengerTtsEnabled: false, timeoutMs: 5000 }),
+    cleanText: (t) => t,
+    synthesize: async () => ({ provider: 'espeak', mime: 'audio/wav', audio: Buffer.from('wav'), tookMs: 1 }),
+  })
+
+  const intRoute = ctx.routes.get('/dsh-tts/integrations')
+  const { req: iReq, res: iRes } = {
+    req: { method: 'GET', headers: { 'sec-fetch-site': 'same-origin' } },
+    res: {
+      statusCode: 200,
+      body: '',
+      writeHead(code) { this.statusCode = code },
+      end(data) { this.body = data },
+    },
+  }
+  await intRoute.handler(iReq, iRes)
+  const body = JSON.parse(iRes.body)
+  assert.equal(body.ok, true)
+  assert.ok(body.integrations.voice)
+  assert.ok(body.integrations.messenger)
+
+  // Verify /speak is gated when channel is messenger and messengerTtsEnabled is false
+  const { EventEmitter } = await import('node:events')
+  const speakRoute = ctx.routes.get('/dsh-tts/speak')
+  const sReq = new EventEmitter()
+  sReq.method = 'POST'
+  sReq.headers = { 'sec-fetch-site': 'same-origin' }
+  const sRes = {
+    statusCode: 200,
+    body: '',
+    writeHead(code) { this.statusCode = code },
+    end(data) { this.body = data },
+  }
+  const sPromise = speakRoute.handler(sReq, sRes)
+  sReq.emit('data', Buffer.from(JSON.stringify({ text: 'Hello', channel: 'messenger' })))
+  sReq.emit('end')
+  await sPromise
+  assert.equal(sRes.statusCode, 403)
+  assert.equal(JSON.parse(sRes.body).error.code, 'disabled')
+})
+
+test('Block 4: #168 - model hints are fully localized in EN and ZH', async () => {
+  const clientSrc = readFileSync(new URL('../lib/client.js', import.meta.url), 'utf8')
+  assert.match(clientSrc, /modelHint_openai/, 'client bundle must contain modelHint_openai')
+  assert.match(clientSrc, /modelHint_piper/, 'client bundle must contain modelHint_piper')
+  assert.match(clientSrc, /modelHint_kokoro/, 'client bundle must contain modelHint_kokoro')
+  assert.match(clientSrc, /ttsUiError/, 'client bundle must contain ttsUiError')
+})

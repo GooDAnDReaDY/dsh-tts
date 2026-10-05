@@ -247,3 +247,58 @@ test('Block 2: #156 - longReply full and summarize receive full text before trun
   assert.equal(resSum.ok, true)
   assert.ok(summarizeReceived.includes(fullText), 'summarize must receive full text, not pre-truncated text')
 })
+
+test('Block 2: #175 - tool output schema matches success result object with declared id', async () => {
+  const ctx = makeMockCtx()
+  apply(ctx, { chain: [{ provider: 'espeak', voice: 'en' }] })
+  const tool = ctx.getRegisteredTool()
+  const result = await tool.execute({ text: 'Testing schema parity' }, { session: { id: 'test' } })
+  assert.equal(result.ok, true)
+  assert.equal(typeof result.id, 'string')
+
+  // Verify outputSchema defines id property and additionalProperties is false
+  assert.equal(tool.output.schema.additionalProperties, false)
+  assert.ok(tool.output.schema.properties.id, 'outputSchema must declare id property')
+  assert.equal(tool.output.schema.properties.id.type, 'string')
+  for (const k of Object.keys(result)) {
+    assert.ok(tool.output.schema.properties[k], `property "${k}" must be declared in tool schema`)
+  }
+})
+
+test('Block 2: #156 - assistant message with speakAsItGoes=true respects summarize and maxChars', async () => {
+  const ctx = makeMockCtx()
+  let summarizeCalled = false
+  ctx.llm = {
+    async *stream(opts) {
+      summarizeCalled = true
+      yield { text: 'Summary of long answer.' }
+    },
+  }
+
+  clearStreamSubscribers()
+  apply(ctx, {
+    speakReplies: true,
+    speakAsItGoes: true,
+    maxChars: 15,
+    longReply: 'summarize',
+    chain: [{ provider: 'espeak', voice: 'en' }],
+  })
+
+  // Emit assistant/message with long text > maxChars
+  const longText = 'This is an exceedingly long reply that must be summarized before synthesis.'
+  const onEvt = ctx.listeners.get('session/event')?.[0]; if (onEvt) onEvt({ id: 's-live' }, { type: 'assistant/message', data: { message: longText } })
+
+  // Wait for async prepareSpeechText and synthesis
+  await new Promise((r) => setTimeout(r, 100))
+
+  assert.equal(summarizeCalled, true, 'summarizeReply must be called for long message under speakAsItGoes')
+  clearStreamSubscribers()
+})
+
+test('Block 2: #173 - cache and in-flight fingerprints change when credential reference changes (KEY_A vs KEY_B)', async () => {
+  const { cacheKey } = await import('../lib/cache.js')
+  const fpA = cacheKey(['hello', 'openai', 'model1', 'voice1', 'reply', '', 'en', 'KEY_A', 'https://api.openai.com/v1'])
+  const fpB = cacheKey(['hello', 'openai', 'model1', 'voice1', 'reply', '', 'en', 'KEY_B', 'https://api.openai.com/v1'])
+
+  assert.notEqual(fpA, fpB, 'different credential references must produce different cache fingerprints')
+})

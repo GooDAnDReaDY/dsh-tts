@@ -272,3 +272,100 @@ test('Block 1: #154 - Parallel synthesis chunks preserve strict sentence order i
     assert.match(utterances[1].text, /Second short/)
   }
 })
+
+test('Block 1: #151 - extractRevision handles array of namespaces, GET /config returns revision, PUT passes revision', async () => {
+  const ctx = makeMockCtx()
+  let currentRev = 77
+  let lastPassedRev = null
+
+  const mockSettingsSvc = {
+    describe: async () => [
+      { name: 'other-plugin', revision: 10 },
+      { name: 'dsh-tts', revision: currentRev },
+    ],
+    replace: async (ns, payload, rev) => {
+      if (rev !== currentRev) {
+        const err = new Error('revision conflict')
+        err.code = 'conflict'
+        throw err
+      }
+      lastPassedRev = rev
+      currentRev++
+    },
+  }
+  ctx.setSettingsService(mockSettingsSvc)
+
+  apply(ctx, { speakReplies: false })
+  const configRoute = ctx.routes.get('/dsh-tts/config')
+
+  // 1. GET /config returns revision from array describe
+  const { req: getReq, res: getRes } = mockReqRes({ method: 'GET', headers: { 'sec-fetch-site': 'same-origin' } })
+  await configRoute.handler(getReq, getRes)
+  assert.equal(getRes.statusCode, 200)
+  const getBody = JSON.parse(getRes.body)
+  assert.equal(getBody.revision, 77)
+
+  // 2. PUT with matching revision succeeds
+  const { req: putReq1, res: putRes1 } = mockReqRes({
+    method: 'PUT',
+    headers: { 'sec-fetch-site': 'same-origin' },
+    body: JSON.stringify({ config: { speakReplies: true }, revision: 77 }),
+  })
+  await configRoute.handler(putReq1, putRes1)
+  assert.equal(putRes1.statusCode, 200)
+  assert.equal(lastPassedRev, 77)
+
+  // 3. Stale PUT with old revision 77 fails with 409 conflict
+  const { req: putReq2, res: putRes2 } = mockReqRes({
+    method: 'PUT',
+    headers: { 'sec-fetch-site': 'same-origin' },
+    body: JSON.stringify({ config: { speakReplies: false }, revision: 77 }),
+  })
+  await configRoute.handler(putReq2, putRes2)
+  assert.equal(putRes2.statusCode, 409)
+})
+
+test('Block 1: #152 - Volatile boxes continue to dynamically update after UI Save without freezing', async () => {
+  const ctx = makeMockCtx()
+  let liveSpeak = false
+  let liveRate = 1.0
+
+  const mockSettingsSvc = {
+    describe: async () => ({ revision: 1 }),
+    replace: async () => {},
+  }
+  ctx.setSettingsService(mockSettingsSvc)
+
+  const livingBoxes = {
+    speakReplies: { get: () => liveSpeak },
+    rate: { get: () => liveRate },
+  }
+  apply(ctx, livingBoxes)
+  const configRoute = ctx.routes.get('/dsh-tts/config')
+  const statusRoute = ctx.routes.get('/dsh-tts/status')
+
+  // 1. Initial status
+  const { req: r1, res: s1 } = mockReqRes({ method: 'GET', headers: { 'sec-fetch-site': 'same-origin' } })
+  await statusRoute.handler(r1, s1)
+  assert.equal(JSON.parse(s1.body).speakReplies, false)
+
+  // 2. UI performs Save
+  const { req: saveReq, res: saveRes } = mockReqRes({
+    method: 'PUT',
+    headers: { 'sec-fetch-site': 'same-origin' },
+    body: JSON.stringify({ config: { speakReplies: true, rate: 1.2 } }),
+  })
+  await configRoute.handler(saveReq, saveRes)
+  assert.equal(saveRes.statusCode, 200)
+
+  // 3. Host loader now updates the living boxes directly
+  liveSpeak = false
+  liveRate = 1.8
+
+  // 4. Runtime status must immediately see the new box values (not frozen by savedConfig)
+  const { req: r2, res: s2 } = mockReqRes({ method: 'GET', headers: { 'sec-fetch-site': 'same-origin' } })
+  await statusRoute.handler(r2, s2)
+  const statusBody = JSON.parse(s2.body)
+  assert.equal(statusBody.speakReplies, false, 'Runtime must reflect live box speakReplies=false')
+  assert.equal(statusBody.rate, 1.8, 'Runtime must reflect live box rate=1.8')
+})

@@ -82,17 +82,37 @@ fi
 
 cd "$REPO_DIR"
 
-# The allowlist comes from the package manifest of the ref being published.
+# The allowlist and denylist come from the package manifest of the ref being published.
+# The allowlist and denylist come from the package manifest of the ref being published.
 ALLOW=("${EXTRA_ALLOW[@]}")
+DENY=()
 while IFS= read -r entry; do
-  [ -n "$entry" ] && ALLOW+=("${entry%/}" )
+  [ -z "$entry" ] && continue
+  if [[ "$entry" =~ ^! ]]; then
+    DENY+=("${entry#!}")
+  else
+    ALLOW+=("$entry")
+  fi
 done < <(git show "${gitea_ref:-origin/main}:package.json" | node -e '
   let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{
-    try{const p=JSON.parse(s);for(const f of (p.files||[])) console.log(f.replace(/\/\*\*$/,""));}catch(e){}
+    try{
+      const p=JSON.parse(s);
+      for(let f of (p.files||[])){
+        f = f.trim();
+        if (f.endsWith("/**")) f = f.slice(0, -3);
+        else if (f.endsWith("/*")) f = f.slice(0, -2);
+        else if (f.endsWith("/")) f = f.slice(0, -1);
+        console.log(f);
+      }
+    }catch(e){}
   });')
 
 is_allowed() {
   local path="$1" entry
+  for entry in "${DENY[@]}"; do
+    if [ "$path" = "$entry" ]; then return 1; fi
+    case "$path" in "$entry"/*) return 1 ;; esac
+  done
   for entry in "${ALLOW[@]}"; do
     if [ "$path" = "$entry" ]; then return 0; fi
     case "$path" in "$entry"/*) return 0 ;; esac

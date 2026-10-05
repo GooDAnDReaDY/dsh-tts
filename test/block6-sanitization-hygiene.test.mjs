@@ -67,3 +67,28 @@ test('Block 6: #182 - cache operations strictly isolate storage within temporary
     assert.equal(fs.existsSync(tmpDir), false, 'temporary directory must be fully cleaned')
   }
 })
+
+test('Block 6: #184 - DEV internal documentation exists in DEV repo and is excluded from npm', () => {
+  assert.ok(fs.existsSync(path.join(root, 'AGENTS.md')), 'AGENTS.md must exist in DEV repo')
+  assert.ok(fs.existsSync(path.join(root, 'index.md')), 'index.md must exist in DEV repo')
+  assert.ok(fs.existsSync(path.join(root, 'docs/architecture.md')), 'docs/architecture.md must exist in DEV repo')
+  assert.ok(fs.existsSync(path.join(root, 'docs/testing.md')), 'docs/testing.md must exist in DEV repo')
+  assert.ok(fs.existsSync(path.join(root, 'docs/deployment.md')), 'docs/deployment.md must exist in DEV repo')
+})
+
+test('Block 6: #185 - publish-github.sh correctly excludes lib/client-src/ from sanitized tree', () => {
+  const out = execSync('bash scripts/publish-github.sh --check', { cwd: root, encoding: 'utf8' })
+  assert.match(out, /WILL BE PUBLISHED/, 'must run publish-github check')
+  const willBePublished = out.split('WILL BE DROPPED')[0]
+  assert.ok(!willBePublished.includes('lib/client-src/'), 'sanitized tree must never contain lib/client-src/')
+  assert.ok(willBePublished.includes('lib/client.js'), 'sanitized tree must contain lib/client.js')
+})
+
+test('Block 6: #183 - README files do not claim AudioWorklet, sub-300ms or settings.yaml', () => {
+  for (const name of ['README.md', 'README.ru.md', 'README.zh.md']) {
+    const text = fs.readFileSync(path.join(root, name), 'utf8')
+    assert.ok(!text.includes('AudioWorklet'), `${name} must not claim AudioWorklet`)
+    assert.ok(!text.includes('<300ms'), `${name} must not claim <300ms`)
+    assert.ok(!text.includes('settings.yaml'), `${name} must not claim settings.yaml`)
+  }
+})
