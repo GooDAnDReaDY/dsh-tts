@@ -1,5 +1,34 @@
 # Changelog
 
+## 0.4.29
+
+### Fixed
+- **Settings & Revision Management** (#151, #152):
+  - Added robust `extractRevision` supporting nested Schemastery namespaces and entries array.
+  - Return revision in `GET /dsh-tts/config` and send it in `PUT /dsh-tts/config`.
+  - Eliminated stale `savedConfig` caching in `live()`, enabling direct live Schemastery volatile box evaluation.
+- **Audio Pipeline, Tool Schema & Dedup** (#156, #157, #166, #173, #175, #190):
+  - Enforced speech preparation, maxChars, and summarizeReply before sentence splitting in `speakAsItGoes`.
+  - Added `id: { type: 'string' }` to `speak_text` tool output schema under `additionalProperties: false` preventing core ToolOutputError.
+  - Included credential slot reference in cache and flight fingerprints avoiding cross-credential collisions.
+  - In-memory index for synthesis cache avoiding O(N) fs scans.
+- **Stream Hub & Web Player** (#158, #159, #160, #161, #174, #176, #186):
+  - `skipCurrent()` now cancels active browser SpeechSynthesis and clears busy state.
+  - `playAudio` resolves promise on NotAllowedError and detaches gesture listeners cleanly.
+  - Disconnect slow SSE subscribers exceeding backpressure buffer threshold.
+  - Registered updater routes inside ctx.effect with clean disposers.
+- **Providers & Local Engines** (#165, #167, #168, #169, #170, #171, #172, #177, #178, #179, #180):
+  - Nested integrations parser in UI and gated /speak on disabled channels.
+  - Canonical EN defaults for Edge and eSpeak.
+  - 100% key parity for EN/ZH model hints.
+  - Google TTS validates MIME and wraps raw PCM in valid WAV container.
+  - Azure SSML includes required xmlns/mstts attributes.
+  - Robust model download locking, cancellation awaiting writer cleanup, and HTML error page rejection.
+- **Release Hygiene & Sanitization** (#183, #184, #185):
+  - Removed outdated marketing claims from READMEs.
+  - Restored internal DEV docs while verifying exclusion from npm pack and GitHub mirror.
+  - Cleaned up publish-github script to handle negation patterns.
+
 ## 0.4.28
 
 ### Fixed
