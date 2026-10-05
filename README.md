@@ -2,7 +2,7 @@
 
 <div align="center">
 
-<h3>Multi-Provider Text-to-Speech Voice Synthesis with Local Neural Engines, Sub-300ms Streaming, IT Dictionary & Messenger Integration for DeepSeek Harness</h3>
+<h3>Multi-Provider Text-to-Speech Voice Synthesis with Local Neural Engines, Real-time Streaming, IT Dictionary & Messenger Integration for DeepSeek Harness</h3>
 
 <p align="center">
   <a href="https://www.npmjs.com/package/@goodandready/dsh-tts"><img src="https://img.shields.io/npm/v/@goodandready/dsh-tts.svg?style=for-the-badge&color=6366f1&labelColor=1e1b4b" alt="npm version"></a>
@@ -49,7 +49,7 @@ graph LR
 
     subgraph Stream [Low-Latency Streaming]
         Scrub --> SSE[SSE /dsh-tts/stream]
-        SSE --> Worklet[AudioWorklet PCM Processor]
+        SSE --> Player[Web Audio & HTML Audio Player]
     end
 
     subgraph Cache [Performance Layer]
@@ -59,7 +59,7 @@ graph LR
 
     subgraph Fallback [TTS Provider Fallback Chain]
         LRU -->|Cache Miss| Chain{Active Chain}
-        Chain -->|Offline| P1[Edge TTS / Piper / eSpeak]
+        Chain -->|Online / Local| P1[Edge TTS / Piper / eSpeak]
         Chain -.->|Cloud Neural| P2[OpenAI / ElevenLabs / Google / Azure / Groq]
         Chain -.->|OpenAI-compatible| P3[SiliconFlow / DeepInfra / Fireworks / OpenRouter]
         Chain -.->|Other| P4[MiMo / MiniMax / Custom]
@@ -85,13 +85,14 @@ graph LR
 
 ## 🚀 Key Features
 
-### 1. 📴 Offline system engines + optional future neural runtimes
-* **Edge TTS / Piper / eSpeak**: fully offline or free local/system synthesis without cloud API keys (Edge needs the `edge-tts` CLI).
+### 1. 📴 Local and system engines + optional future neural runtimes
+* **Piper / eSpeak**: fully offline local synthesis without cloud API keys.
+* **Edge TTS**: free online cloud synthesis without API keys (requires network connection and the `edge-tts` CLI).
 * **Kokoro-82M / F5-TTS**: weight download and status UI only. **Neural inference is not bundled** in this package — those providers fail with a clear reason and the fallback chain continues. Do not enable them expecting speech until a supported runtime is wired.
 * **ModelManager UI**: Direct manual installation in settings with real-time download progress bar, SHA-256 validation, and deletion. No silent or automatic multi-gigabyte downloads.
 
 ### 2. ⚡ Real-Time Streaming Audio (< 300 ms Latency)
-* **AudioWorklet (`TTSWorklet`)**: High-performance Web Audio Worklet processor playing seamless Float32Array PCM chunks at 24 kHz without audible clicks or buffer underruns.
+* **HTML Audio & Web Audio Player**: Seamless queued audio playback with prebuffering, barge-in support, playback rate control, and instant browser fallback.
 * **Server-Sent Events (SSE)**: Dedicated `/dsh-tts/stream` route delivering synthesized chunks to connected browsers instantly.
 
 ### 3. 🎙️ Voice Duplex & VAD Barge-In (with `@goodandready/dsh-voice`)
@@ -173,7 +174,7 @@ dsh plugin --profile web add @goodandready/dsh-tts
 
 ---
 
-## ⚙️ Configuration Recipes (`settings.yaml`)
+## ⚙️ Configuration Recipes (DSH Settings UI)
 
 ```yaml
 dsh-tts:
@@ -212,7 +213,7 @@ The plugin settings card (**Settings → Plugins → Plugin settings**) exposes 
 
 Provider **API keys are never stored in plugin settings**. Paste them in the chain editor; values go to the DSH credential store via `PUT /dsh-tts/credential`.
 
-Config-only (not in the card): `*KeyEnv` fields (`openaiKeyEnv`, `elevenlabsKeyEnv`, …). They only rename the credential slot the plugin looks up. Change them in `settings.yaml` if you must rebind a key name; the defaults match the usual environment variable names.
+Config-only (not in the card): `*KeyEnv` fields (`openaiKeyEnv`, `elevenlabsKeyEnv`, …). They only rename the credential slot the plugin looks up. Change them in the profile settings if you must rebind a key name; the defaults match the usual environment variable names.
 
 
 ## 🤖 HTTP Endpoints Reference
