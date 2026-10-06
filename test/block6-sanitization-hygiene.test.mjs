@@ -69,8 +69,9 @@ test('Block 6: #182 - cache operations strictly isolate storage within temporary
 })
 
 test('Block 6: #184 - DEV internal documentation exists in DEV repo and is excluded from npm', () => {
-  assert.ok(fs.existsSync(path.join(root, 'AGENTS.md')), 'AGENTS.md must exist in DEV repo')
-  assert.ok(fs.existsSync(path.join(root, 'index.md')), 'index.md must exist in DEV repo')
+  const devDocRoot = fs.existsSync(path.join(root, 'AGENTS.md')) ? root : path.join(root, '../..')
+  assert.ok(fs.existsSync(path.join(devDocRoot, 'AGENTS.md')), 'AGENTS.md must exist in DEV repo')
+  assert.ok(fs.existsSync(path.join(devDocRoot, 'index.md')), 'index.md must exist in DEV repo')
   assert.ok(fs.existsSync(path.join(root, 'docs/architecture.md')), 'docs/architecture.md must exist in DEV repo')
   assert.ok(fs.existsSync(path.join(root, 'docs/testing.md')), 'docs/testing.md must exist in DEV repo')
   assert.ok(fs.existsSync(path.join(root, 'docs/deployment.md')), 'docs/deployment.md must exist in DEV repo')
