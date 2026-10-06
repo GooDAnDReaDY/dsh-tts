@@ -100,9 +100,9 @@ test('Block 3: #176 - updater routes are registered inside ctx.effect and dispos
 
   apply(mockCtx, { speakReplies: true })
 
-  // Verify updater routes are registered
-  assert.ok(routes.has('/dsh-tts/updater'), '/dsh-tts/updater must be registered')
+  // Verify updater routes are registered (canonical route only, #199)
   assert.ok(routes.has('/api/dsh-tts/update'), '/api/dsh-tts/update must be registered')
+  assert.equal(routes.has('/dsh-tts/updater'), false, 'duplicate /dsh-tts/updater must not be registered (#199)')
 
   // Run all effect cleanups (simulating plugin dispose)
   for (const cleanup of effects) {
@@ -110,7 +110,6 @@ test('Block 3: #176 - updater routes are registered inside ctx.effect and dispos
   }
 
   // All routes including updater routes must be completely removed
-  assert.equal(routes.has('/dsh-tts/updater'), false, 'updater route must be cleaned up on dispose')
   assert.equal(routes.has('/api/dsh-tts/update'), false, 'update api route must be cleaned up on dispose')
 })
 
