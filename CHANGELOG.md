@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.4.30
+
+### Fixed
+- **Supply Chain Security & Updater** (#196, #199):
+  - Removed `--config.minimumReleaseAge=0` bypass in `lib/updater.js:installExact`, respecting pnpm supply-chain quarantine during updates.
+  - Consolidated updater endpoint to canonical `/api/dsh-tts/update`, removing legacy `/dsh-tts/updater` route alias.
+  - Implemented shared `updaterMutex` returning HTTP 409 `Install already in progress` across concurrent requests.
+- **Theme Tokens & Design System** (#197):
+  - Replaced legacy CSS custom properties with canonical DSH core theme tokens (`--dsw-state-warn-primary`, `--dsw-brand-primary`, `--dsw-bg-layer-3`).
+- **Client Networking & Timeout Safety** (#198):
+  - Wrapped all client `fetch` calls in `clientFetch(url, options)` utility with configurable 15-second `AbortController` timeout.
+  - Added error rejection handlers on fire-and-forget telemetry, settings, and player requests.
+
 ## 0.4.29
 
 ### Fixed
