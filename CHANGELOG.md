@@ -1,5 +1,29 @@
 # Changelog
 
+## 0.4.31
+
+### Fixed
+- **Settings & Revision Safety** (#151):
+  - Stripped `revision` from config payload before calling `settingsApi.replace(parsed, revision)`, eliminating `Config field "revision" is not volatile` validation errors in core SettingsForms.
+  - Reordered save sequence so provider API keys are only persisted to credential store after settings replacement succeeds, preventing mutation on 409 revision conflict.
+- **Messenger & Duplex Route Guards** (#165):
+  - Added `vadBargeIn` property to `/dsh-tts/status` and connected client player to check `vadBargeIn` during active speech.
+  - Enforced 403 rejection on external messenger `/dsh-tts/speak` requests when `messengerTtsEnabled` is disabled.
+- **Model Integrity & Immutable Sources** (#179):
+  - Updated Kokoro-82M ONNX model weights and voices URLs to official release assets from `thewh1teagle/kokoro-onnx` v0.19.
+  - Pinned F5-TTS model weights URL to immutable upstream commit hash `84e5a410d9cead4de2f847e7c9369a6440bdfaca`.
+  - Upgraded `validateFileIntegrity` to reject HTML error pages, repetitive dummy byte sequences, and malformed JSON files.
+- **SSE Hub Backpressure & Resource Protection** (#186):
+  - Implemented backpressure buffer checks in `safeWrite`, immediately dropping backpressured subscribers when buffer cap is exceeded while preserving healthy subscribers.
+- **Client Timeout Stream Wrapping** (#198):
+  - Wrapped response body methods (`json`, `text`, `blob`, `arrayBuffer`) in `clientFetch` so `AbortController` timeout remains active until the body settles.
+- **Synthesis Cache Race Elimination** (#202):
+  - Added generation tracking and in-flight write synchronization to `lib/cache.js`, preventing `ENOTEMPTY` errors during cache clearing.
+- **Documentation & Packaging Hygiene** (#181, #183, #184):
+  - Aligned `README.zh.md` architecture and tables to correctly classify Edge TTS as cloud-free online and Piper/eSpeak as local/offline.
+  - Removed `AGENTS.md` and `index.md` from `.gitignore` while ensuring strict exclusion from published npm packages.
+  - Added comprehensive test suites verifying synthesis deduplication, player SSE contracts, and cache clear atomicity.
+
 ## 0.4.30
 
 ### Fixed
