@@ -11,8 +11,6 @@ credentials.yaml
 *.tgz
 
 # Internal documentation and platform configs
-AGENTS.md
-index.md
 .gitea/
 docs/architecture/
 docs/deployment/

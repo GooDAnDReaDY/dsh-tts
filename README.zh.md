@@ -2,7 +2,7 @@
 
 <div align="center">
 
-<h3>DeepSeek Harness 多引擎语音合成：云端与系统离线引擎、流式音频、IT 术语词典与即时通讯集成</h3>
+<h3>DeepSeek Harness 多引擎语音合成：云端与本地引擎、流式音频、IT 术语词典与即时通讯集成</h3>
 
 <p align="center">
   <a href="https://www.npmjs.com/package/@goodandready/dsh-tts"><img src="https://img.shields.io/npm/v/@goodandready/dsh-tts.svg?style=for-the-badge&color=6366f1&labelColor=1e1b4b" alt="npm version"></a>
@@ -39,7 +39,7 @@
 
 **`dsh-tts`** 为 **DeepSeek Harness** Web 界面提供高保真智能体回复语音朗读服务。开启 **朗读智能体回复** 后，每条生成的助手回复或实时流式片段均由服务端合成并即时推流至浏览器播放。
 
-API 密钥绝不暴露给前端：音频合成全程在服务端通过**多服务商独立备用链**执行，包括系统离线引擎（Edge TTS、Piper、eSpeak）。Kokoro/F5 仅可下载权重，**推理未捆绑**。
+API 密钥绝不暴露给前端：音频合成全程在服务端通过**多服务商独立备用链**执行，包括本地系统与在线引擎（Edge TTS 在线免 Key，Piper 与 eSpeak 本地离线）。Kokoro/F5 仅可下载权重，**推理未捆绑**。
 
 ```mermaid
 graph LR
@@ -59,7 +59,7 @@ graph LR
 
     subgraph Fallback [TTS 引擎备用链]
         LRU -->|未命中| Chain{生效备用链}
-        Chain -->|离线| P1[Edge TTS / Piper / eSpeak]
+        Chain -->|在线 / 本地| P1[Edge TTS / Piper / eSpeak]
         Chain -.->|云端| P2[OpenAI / ElevenLabs / Google / Azure / Groq]
         Chain -.->|免费云端| P3[EdgeTTS / SiliconFlow]
         Chain -.->|系统兜底| P4[本地 Piper / eSpeak NG]
@@ -85,8 +85,9 @@ graph LR
 
 ## 🚀 核心功能
 
-### 1. 📴 离线系统引擎与诚实的神经引擎状态
-* **Edge TTS / Piper / eSpeak**：可用的离线/系统合成，无需云 API Key。
+### 1. 📴 本地系统与在线引擎状态
+* **Piper / eSpeak**：完全离线的本地系统合成，无需云 API 密钥。
+* **Edge TTS**：免费的微软在线语音合成，无需 API 密钥（需要网络连接与 edge-tts 工具）。
 * **Kokoro-82M / F5-TTS**：仅权重下载与状态展示。**推理未捆绑在本包中**，provider 会明确失败并继续 fallback。
 * **ModelManager 管理界面**：在设置中手动安装模型，实时显示下载进度条、SHA-256 校验和一键删除。无任何静默或自动下载。
 
