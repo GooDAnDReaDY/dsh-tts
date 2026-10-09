@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.4.32
+
+### Fixed
+- **Transactional Rollback on Credential Failure** (#151):
+  - Added transactional rollback to previous config in `/dsh-tts/config` PUT handler if credential persistence throws an error after settings replacement, ensuring consistent state on aborted saves.
+- **Messenger Gateway / Speak Guard Strictness** (#165):
+  - Enforced 403 rejection for unclassified / external gateway requests lacking channel metadata when `messengerTtsEnabled` is disabled, while preserving internal web UI and voice duplex traffic.
+- **Strict Multi-Format Model Integrity Validation** (#179):
+  - Enhanced `validateFileIntegrity` to reject uniform repeating byte sequences of any value, strictly validate JSON parsing for voice mappings, enforce ONNX protobuf header magic (`0x08`), and validate safetensors header length bounds.
+- **Non-Tautological Test Suite Enforcement** (#181):
+  - Replaced tautological and assertion-free test fixtures in deduplication, client prebuffering, and SSE player suites with strict assertions verifying exact execution counts (`synthCalls === 1`), factory invocation, and queue limits.
+- **Immediate Pre-Write SSE Chunk Cap** (#186):
+  - Added immediate buffer cap rejection before `res.write` in `safeWrite`, preventing oversized payloads (>512 KB) from entering the socket buffer even on the initial chunk.
+- **Cache L2 Clear Concurrency Guard** (#202):
+  - Captured generation token at the immediate start of `get()`, preventing post-clear metadata recreation when disk reads are interleaved with cache clearing.
+
 ## 0.4.31
 
 ### Fixed
