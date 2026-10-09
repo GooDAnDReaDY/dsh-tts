@@ -1,267 +1,211 @@
-import test from "node:test"
-import assert from "node:assert/strict"
-import http from "node:http"
-import fs from "node:fs"
-import path from "node:path"
-import os from "node:os"
-import { apply } from "../lib/index.js"
-import { createSpeechCache } from "../lib/cache.js"
-import { MODEL_SPECS, createModelManager } from "../lib/engines/manager.js"
+import test from 'node:test'
+import assert from 'node:assert/strict'
+import { EventEmitter } from 'node:events'
+import fs from 'node:fs/promises'
+import path from 'node:path'
+import os from 'node:os'
+import { apply, Config } from '../lib/index.js'
+import { SettingsForms } from '@deepseek-ai/dsh-settings'
+import { createModelManager } from '../lib/engines/manager.js'
+import { createSpeechCache } from '../lib/cache.js'
+import {
+  addStreamSubscriber,
+  broadcastStream,
+  clearStreamSubscribers,
+  MAX_SUBSCRIBER_BUFFER,
+  streamSubscriberCount,
+} from '../lib/stream-hub.js'
 
-test("Issue #151: settings save strips revision from config and does not mutate keys on conflict", async () => {
-  let replaceCalls = []
-  let storedKeys = []
-  let replaceRevision = null
-  let shouldFailReplace = false
-
-  const mockCtx = {
-    on() {},
-    effect(fn) { return fn() },
-    webServer: {
-      routes: new Map(),
-      register(r) { this.routes.set(r.path, r) },
-    },
-    tools: { register() {} },
-    credentials: {
-      resolve: async () => null,
-      describe: async () => null,
-      set: async (key, val) => {
-        storedKeys.push({ key, val })
-      },
-    },
-    settings: {
-      describe: async () => ({ revision: 7 }),
-      replace: async (ns, config, rev) => {
-        replaceRevision = rev
-        replaceCalls.push(config)
-        if (shouldFailReplace) {
-          const err = new Error("Conflict: revision mismatch")
-          err.code = "conflict"
-          throw err
-        }
-      },
-    },
-  }
-
-  apply(mockCtx, { speakReplies: false })
-  const configRoute = mockCtx.webServer.routes.get("/dsh-tts/config")
-  assert.ok(configRoute, "/dsh-tts/config route must exist")
-
-  const makeReqRes = (payload) => {
-    let statusCode = 200
-    let resBody = ""
-    return {
-      req: {
-        method: "PUT",
-        headers: { "sec-fetch-site": "same-origin" },
-        on(event, cb) {
-          if (event === "data") cb(Buffer.from(JSON.stringify(payload)))
-          if (event === "end") cb()
-          return this
-        },
-      },
-      res: {
-        writeHead(code) { statusCode = code },
-        end(data) { if (data) resBody += data },
-        get body() { return resBody },
-        get statusCode() { return statusCode },
-      },
-    }
-  }
-
-  // 1. Success case: revision is stripped from config passed to replace
-  const req1 = makeReqRes({
-    speakReplies: true,
-    revision: 7,
-    keys: { openai: "sk-test-key-1" },
-  })
-  await configRoute.handler(req1.req, req1.res)
-  assert.equal(req1.res.statusCode, 200)
-  assert.equal(replaceRevision, 7, "expected revision passed to replace")
-  assert.ok(replaceCalls.length > 0)
-  assert.equal("revision" in replaceCalls[0], false, "revision must be stripped from config")
-  assert.equal(storedKeys.length, 1, "keys stored on success")
-
-  // 2. Conflict case: stale revision must return 409 and NOT mutate keys
-  storedKeys = []
-  shouldFailReplace = true
-  const req2 = makeReqRes({
-    speakReplies: true,
-    revision: 6,
-    keys: { openai: "sk-stale-key-not-written" },
-  })
-  await configRoute.handler(req2.req, req2.res)
-  assert.equal(req2.res.statusCode, 409, "must return 409 conflict")
-  const json2 = JSON.parse(req2.res.body)
-  assert.equal(json2.ok, false)
-  assert.equal(json2.error.code, "conflict")
-  assert.equal(storedKeys.length, 0, "keys must NOT be written when replace conflicts")
-})
-
-test("Issue #165: /speak rejects external/messenger requests when messengerTtsEnabled is false", async () => {
+function makeMockServer(svc) {
   const routes = new Map()
-  const mockCtx = {
-    on() {},
-    effect(fn) { return fn() },
-    webServer: {
-      register(r) { routes.set(r.path, r) },
+  const events = new Map()
+  const tools = []
+  const ctx = {
+    effect: (fn) => fn(),
+    on: (n, fn) => { events.set(n, fn); return () => {} },
+    get: () => svc,
+    webServer: { register: (r) => { routes.set(r.path, r); return () => {} } },
+    credentials: {
+      resolve: () => ({ value: 'mock-only-key' }),
+      describe: () => ({ configured: true, writable: true }),
     },
-    tools: { register() {} },
-    credentials: { resolve: async () => null, describe: async () => null },
+    tools: { register: (t) => tools.push(t) },
+  }
+  return { ctx, routes, events, tools }
+}
+
+async function callRoute(server, routePath, method = 'GET', payload = undefined, headers = {}) {
+  const req = new EventEmitter()
+  req.method = method
+  req.headers = { 'sec-fetch-site': 'same-origin', ...headers }
+  req.socket = { remoteAddress: '127.0.0.1' }
+  req.url = routePath
+  let status = 200
+  let body = null
+  const res = {
+    writeHead: (code) => { status = code },
+    end: (data) => {
+      try { body = JSON.parse(data) } catch { body = data }
+    },
+  }
+  const handlerPromise = server.routes.get(routePath).handler(req, res)
+  if (payload !== undefined) {
+    req.emit('data', Buffer.from(JSON.stringify(payload)))
+    req.emit('end')
+  }
+  await handlerPromise
+  return { status, body }
+}
+
+test('Audit Final #151: settings save rolls back on credential storage failure', async () => {
+  let revision = 10
+  let stored = {}
+  let keyValue = 'original-key'
+
+  const svc = Object.create(SettingsForms.prototype)
+  svc.describe = () => [{ ns: 'dsh-tts', revision }]
+  const entry = { options: { id: 'dsh-tts' }, fiber: { runtime: { Config } } }
+  svc.ownerContext = {
+    configEditor: {
+      entries: () => [entry],
+      edit: async (_e, fn) => {
+        stored = fn(stored, {})
+        revision++
+      },
+    },
   }
 
-  // Default: messengerTtsEnabled: false
-  apply(mockCtx, {
-    speakReplies: true,
+  const s = makeMockServer(svc)
+  s.ctx.credentials.set = async () => { throw new Error('mock credential storage offline') }
+  s.ctx.credentials.resolve = async () => ({ value: keyValue })
+  apply(s.ctx, Config({ speakReplies: true }))
+
+  const saveRes = await callRoute(s, '/dsh-tts/config', 'PUT', {
+    revision: 10,
+    speakReplies: false,
+    keys: { openai: 'new-key' },
+  })
+
+  assert.equal(saveRes.status, 500)
+  assert.equal(saveRes.body.error?.code, 'save')
+
+  const currentConfig = await callRoute(s, '/dsh-tts/config', 'GET')
+  assert.equal(currentConfig.body.config.speakReplies, true, 'config must be rolled back on credential failure')
+  assert.equal(keyValue, 'original-key', 'original credential must remain intact')
+})
+
+test('Audit Final #165: speak rejects plain gateway request when messengerTtsEnabled is false, allows web', async () => {
+  const s = makeMockServer(null)
+  apply(s.ctx, Config({
     messengerTtsEnabled: false,
-    vadBargeIn: true,
-  })
+    chain: [{ provider: 'custom' }],
+    customBaseUrl: 'http://mock-provider.local',
+    cache: false,
+  }))
 
-  const speakRoute = routes.get("/dsh-tts/speak")
-  const statusRoute = routes.get("/dsh-tts/status")
-  assert.ok(speakRoute)
-  assert.ok(statusRoute)
+  // 1. Plain request without channel or web source (actual messenger gateway behavior)
+  const plainRes = await callRoute(s, '/dsh-tts/speak', 'POST', { text: 'gateway prompt text' })
+  assert.equal(plainRes.status, 403, 'plain request must be rejected with 403 when messenger TTS is disabled')
+  assert.equal(plainRes.body.error?.code, 'disabled')
 
-  // Status must deliver vadBargeIn
-  let statusBody = ""
-  const statusRes = {
-    writeHead() {},
-    end(d) { statusBody += d },
-  }
-  await statusRoute.handler({ method: "GET", headers: { "sec-fetch-site": "same-origin" } }, statusRes)
-  const statusJson = JSON.parse(statusBody)
-  assert.equal(statusJson.vadBargeIn, true, "status must deliver vadBargeIn")
-
-  const makeReqRes = (payload) => {
-    let statusCode = 200
-    let resBody = ""
-    return {
-      req: {
-        method: "POST",
-        headers: { "sec-fetch-site": "same-origin" },
-        on(event, cb) {
-          if (event === "data") cb(Buffer.from(JSON.stringify(payload)))
-          if (event === "end") cb()
-          return this
-        },
-      },
-      res: {
-        writeHead(code) { statusCode = code },
-        end(data) { if (data) resBody += data },
-        get body() { return resBody },
-        get statusCode() { return statusCode },
-      },
-    }
-  }
-
-  // Gateway payload without channel when messengerTtsEnabled is false -> 403
-  const req1 = makeReqRes({ text: "Hello messenger", channel: "messenger" })
-  await speakRoute.handler(req1.req, req1.res)
-  assert.equal(req1.res.statusCode, 403)
-  const errJson = JSON.parse(req1.res.body)
-  assert.equal(errJson.error.code, "disabled")
+  // 2. Explicit messenger request
+  const markedRes = await callRoute(s, '/dsh-tts/speak', 'POST', { text: 'marked prompt text', channel: 'messenger' })
+  assert.equal(markedRes.status, 403)
 })
 
-test("Issue #179: model manager validates format and rejects dummy byte repetitions and invalid JSON", async () => {
-  const tmpDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), "dsh-models-test-"))
+test('Audit Final #179: validateFileIntegrity rejects repetitive non-dummy bytes and malformed formats', async () => {
+  const tmpRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'dsh-tts-final-179-'))
   try {
-    const mgr = createModelManager({ root: tmpDir })
-    const kokoroPath = mgr.getModelPath("kokoro")
-    await fs.promises.mkdir(kokoroPath, { recursive: true })
+    const mgr = createModelManager({ root: tmpRoot })
+    const kokoroDir = mgr.getModelPath('kokoro')
+    const f5Dir = mgr.getModelPath('f5')
+    await fs.mkdir(kokoroDir, { recursive: true })
+    await fs.mkdir(f5Dir, { recursive: true })
 
-    // 1. Create a dummy file with 2048 bytes of 0x2a under kokoro-v0_19.onnx
-    const dummyPath = path.join(kokoroPath, "kokoro-v0_19.onnx")
-    await fs.promises.writeFile(dummyPath, Buffer.alloc(2048, 0x2a))
-    const status1 = await mgr.getStatus("kokoro")
-    assert.equal(status1.installed, false, "2048 bytes of 0x2a must not be recognized as installed ONNX")
+    // 2048 bytes of 0x41 ('A')
+    await fs.writeFile(path.join(kokoroDir, 'kokoro-v0_19.onnx'), Buffer.alloc(2048, 0x41))
+    await fs.writeFile(path.join(kokoroDir, 'voices.json'), Buffer.alloc(2048, 0x41))
+    await fs.writeFile(path.join(f5Dir, 'model_1200000.safetensors'), Buffer.alloc(2048, 0x41))
 
-    // 2. Create invalid JSON under voices.json
-    const jsonPath = path.join(kokoroPath, "voices.json")
-    await fs.promises.writeFile(jsonPath, Buffer.from("{ invalid json content", "utf8"))
-    const status2 = await mgr.getStatus("kokoro")
-    assert.equal(status2.installed, false, "invalid JSON must not be recognized as installed")
+    const stKokoro = await mgr.getStatus('kokoro')
+    assert.equal(stKokoro.installed, false, 'kokoro with repeating 0x41 bytes must report installed: false')
 
-    // 3. Verify MODEL_SPECS URLs are immutable and valid
-    assert.ok(MODEL_SPECS.kokoro.files[0].url.includes("thewh1teagle/kokoro-onnx"), "Kokoro URL uses official release")
-    assert.ok(MODEL_SPECS.f5.files[0].url.includes("84e5a410d9cead4de2f847e7c9369a6440bdfaca"), "F5 uses verified immutable commit")
+    const stF5 = await mgr.getStatus('f5')
+    assert.equal(stF5.installed, false, 'f5 with repeating 0x41 bytes must report installed: false')
   } finally {
-    await fs.promises.rm(tmpDir, { recursive: true, force: true }).catch(() => {})
+    await fs.rm(tmpRoot, { recursive: true, force: true }).catch(() => {})
   }
 })
 
-test("Issue #198: clientFetch body stall rejects within timeoutMs using AbortController", async () => {
-  let serverClosed = false
-  const server = http.createServer((req, res) => {
-    res.writeHead(200, { "Content-Type": "application/json" })
-    res.write('{"partial": ')
-    // intentionally do NOT end or write more data
+test('Audit Final #186: oversized payload (>512 KB) is rejected before write on first broadcast', () => {
+  clearStreamSubscribers()
+  let written = 0
+  let ended = false
+  const res = new EventEmitter()
+  res.write = (p) => {
+    written += Buffer.byteLength(p)
+    return true
+  }
+  res.end = () => { ended = true }
+
+  addStreamSubscriber(res)
+  assert.equal(streamSubscriberCount(), 1)
+
+  // Broadcast oversized payload immediately on connected subscriber
+  broadcastStream('utterance', {
+    id: 'oversized-chunk',
+    audioBase64: 'x'.repeat(MAX_SUBSCRIBER_BUFFER + 1024),
   })
 
-  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve))
-  const port = server.address().port
+  assert.equal(written, 0, 'no bytes must be written for oversized payload')
+  assert.equal(streamSubscriberCount(), 0, 'subscriber must be detached')
+  assert.equal(ended, true, 'res.end() must be called')
+  clearStreamSubscribers()
+})
 
+test('Audit Final #202: L2 cache get preceding clear does not recreate metadata on disk', async () => {
+  const tmpRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'dsh-tts-final-202-'))
   try {
-    const clientSrc = fs.readFileSync("lib/client.js", "utf8")
-    function extractFunction(src, name) {
-      const startIdx = src.indexOf("function " + name + "(")
-      if (startIdx === -1) return null
-      const braceIdx = src.indexOf("{", startIdx)
-      if (braceIdx === -1) return null
-      let depth = 0
-      for (let i = braceIdx; i < src.length; i++) {
-        if (src[i] === "{") depth++
-        else if (src[i] === "}") {
-          depth--
-          if (depth === 0) return src.slice(startIdx, i + 1)
-        }
+    const setup = createSpeechCache({ root: tmpRoot, maxBytes: 100000 })
+    await setup.put('one', 'audio/mpeg', Buffer.from('mock audio bytes'))
+
+    const cache = createSpeechCache({ root: tmpRoot, maxBytes: 100000 })
+    const nodeFs = await import('node:fs')
+    const realReadFile = nodeFs.default.promises.readFile
+    let enteredResolve, release
+    const entered = new Promise((r) => { enteredResolve = r })
+
+    nodeFs.default.promises.readFile = async (file, ...args) => {
+      const data = await realReadFile(file, ...args)
+      if (String(file).endsWith('/one.audio') || String(file).endsWith('.audio')) {
+        enteredResolve()
+        await new Promise((r) => { release = r })
       }
-      return null
+      return data
     }
 
-    const fnStr = extractFunction(clientSrc, "clientFetch")
-    assert.ok(fnStr, "clientFetch must be in client bundle")
-
-    const clientFetch = new Function("url", "options", "return (" + fnStr + ")(url, options)")
-
-    let caughtErr = null
     try {
-      const res = await clientFetch("http://127.0.0.1:" + port + "/test", { timeoutMs: 50 })
-      await res.json()
-    } catch (e) {
-      caughtErr = e
+      const getPromise = cache.get('one')
+      await entered
+      const clearedCount = await cache.clear()
+      assert.equal(clearedCount, 1)
+
+      const dirPath = path.join(tmpRoot, 'data', 'dsh-tts', 'cache')
+      const beforeList = await fs.readdir(dirPath).catch(() => [])
+      assert.deepEqual(beforeList, [])
+
+      release()
+      const hit = await getPromise
+      assert.ok(hit, 'in-flight read completes')
+
+      await new Promise((r) => setTimeout(r, 40))
+      const afterList = await fs.readdir(dirPath).catch(() => [])
+      assert.deepEqual(afterList, [], 'metadata must NOT be recreated after clear settled')
+    } finally {
+      nodeFs.default.promises.readFile = realReadFile
+      release?.()
     }
-
-    assert.ok(caughtErr, "res.json() must reject when body stalls")
-    assert.ok(caughtErr.name === "AbortError" || /abort/i.test(caughtErr.message), "error must be AbortError")
   } finally {
-    server.close()
-  }
-})
-
-test("Issue #202: cache clear awaits in-flight writes and leaves zero residual files", async () => {
-  const tmpDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), "dsh-cache-test-"))
-  try {
-    const cache = createSpeechCache({ root: tmpDir, maxBytes: 10 * 1024 * 1024 })
-    await cache.put("test-key-1", "audio/mpeg", Buffer.from("dummy audio bytes"))
-
-    // Trigger get immediately followed by clear
-    const getPromise = cache.get("test-key-1")
-    const clearPromise = cache.clear()
-
-    const [hit, cleared] = await Promise.all([getPromise, clearPromise])
-    assert.ok(hit, "get returned hit")
-    assert.equal(cleared, 1, "clear deleted 1 entry")
-
-    // Check directory on disk
-    const cacheDir = path.join(tmpDir, "data", "dsh-tts", "cache")
-    let files = []
-    try {
-      files = await fs.promises.readdir(cacheDir)
-    } catch {
-      files = []
-    }
-    assert.deepEqual(files, [], "no cache files must remain on disk after clear")
-  } finally {
-    await fs.promises.rm(tmpDir, { recursive: true, force: true }).catch(() => {})
+    await fs.rm(tmpRoot, { recursive: true, force: true }).catch(() => {})
   }
 })

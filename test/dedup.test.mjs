@@ -23,8 +23,30 @@ function makeMockCtx() {
       register(tool) { registeredTool = tool },
     },
     credentials: {
-      resolve: async () => null,
+      resolve: async () => ({ value: 'mock-key' }),
       describe: async () => null,
+    },
+  }
+}
+
+function makeReqRes(text) {
+  let statusCode = 200
+  let resBody = ''
+  return {
+    req: {
+      method: 'POST',
+      headers: { 'sec-fetch-site': 'same-origin' },
+      on(event, cb) {
+        if (event === 'data') cb(Buffer.from(JSON.stringify({ text, channel: 'web' })))
+        if (event === 'end') cb()
+        return this
+      },
+    },
+    res: {
+      writeHead(code) { statusCode = code },
+      end(data) { if (data) resBody += data },
+      get body() { return resBody },
+      get statusCode() { return statusCode },
     },
   }
 }
@@ -39,28 +61,6 @@ test('real synthesis deduplication: concurrent requests for same text share sing
 
   const speakRoute = ctx.routes.get('/dsh-tts/speak')
   assert.ok(speakRoute, '/dsh-tts/speak route must be registered')
-
-  const makeReqRes = (text) => {
-    let statusCode = 200
-    let resBody = ''
-    return {
-      req: {
-        method: 'POST',
-        headers: { 'sec-fetch-site': 'same-origin' },
-        on(event, cb) {
-          if (event === 'data') cb(Buffer.from(JSON.stringify({ text })))
-          if (event === 'end') cb()
-          return this
-        },
-      },
-      res: {
-        writeHead(code) { statusCode = code },
-        end(data) { if (data) resBody += data },
-        get body() { return resBody },
-        get statusCode() { return statusCode },
-      },
-    }
-  }
 
   // Two identical speak requests fired concurrently
   const reqRes1 = makeReqRes('Same text for deduplication test.')
@@ -90,28 +90,6 @@ test('real synthesis deduplication: different texts execute independently (#181)
 
   const speakRoute = ctx.routes.get('/dsh-tts/speak')
 
-  const makeReqRes = (text) => {
-    let statusCode = 200
-    let resBody = ''
-    return {
-      req: {
-        method: 'POST',
-        headers: { 'sec-fetch-site': 'same-origin' },
-        on(event, cb) {
-          if (event === 'data') cb(Buffer.from(JSON.stringify({ text })))
-          if (event === 'end') cb()
-          return this
-        },
-      },
-      res: {
-        writeHead(code) { statusCode = code },
-        end(data) { if (data) resBody += data },
-        get body() { return resBody },
-        get statusCode() { return statusCode },
-      },
-    }
-  }
-
   const reqRes1 = makeReqRes('Alpha phrase.')
   const reqRes2 = makeReqRes('Beta phrase.')
 
@@ -140,53 +118,46 @@ test('runChain walks providers until successful provider responds', async () => 
 
 test("real synthesis deduplication counts: 2 concurrent identical requests invoke synthesis exactly once (#181)", async () => {
   let synthCalls = 0
-  const ctx = makeMockCtx()
-  apply(ctx, {
-    speakReplies: true,
-    chain: [{ provider: "espeak", voice: "en" }],
-  })
-
-  const speakRoute = ctx.routes.get("/dsh-tts/speak")
-  assert.ok(speakRoute, "/dsh-tts/speak route must be registered")
-
-  // Mock internal synthesize function by intercepting provider or chain
-  let origHandler = speakRoute.handler
-
-  const makeReqRes = (text) => {
-    let statusCode = 200
-    let resBody = ""
+  const origFetch = globalThis.fetch
+  globalThis.fetch = async () => {
+    synthCalls++
+    await new Promise((r) => setTimeout(r, 20))
     return {
-      req: {
-        method: "POST",
-        headers: { "sec-fetch-site": "same-origin" },
-        on(event, cb) {
-          if (event === "data") cb(Buffer.from(JSON.stringify({ text, channel: "web" })))
-          if (event === "end") cb()
-          return this
-        },
-      },
-      res: {
-        writeHead(code) { statusCode = code },
-        end(data) { if (data) resBody += data },
-        get body() { return resBody },
-        get statusCode() { return statusCode },
-      },
+      ok: true,
+      headers: new Headers({ 'content-type': 'audio/wav' }),
+      arrayBuffer: async () => Buffer.from('RIFF mock audio data wav'),
     }
   }
 
-  const reqRes1 = makeReqRes("Deduplication exact call counting text.")
-  const reqRes2 = makeReqRes("Deduplication exact call counting text.")
+  try {
+    const ctx = makeMockCtx()
+    apply(ctx, {
+      speakReplies: true,
+      cache: false,
+      chain: [{ provider: "custom" }],
+      customBaseUrl: "http://mock-tts.local",
+    })
 
-  await Promise.all([
-    speakRoute.handler(reqRes1.req, reqRes1.res),
-    speakRoute.handler(reqRes2.req, reqRes2.res),
-  ])
+    const speakRoute = ctx.routes.get("/dsh-tts/speak")
+    assert.ok(speakRoute, "/dsh-tts/speak route must be registered")
 
-  assert.equal(reqRes1.res.statusCode, 200)
-  assert.equal(reqRes2.res.statusCode, 200)
-  const json1 = JSON.parse(reqRes1.res.body)
-  const json2 = JSON.parse(reqRes2.res.body)
-  assert.equal(json1.ok, true)
-  assert.equal(json2.ok, true)
-  assert.equal(json1.audioBase64, json2.audioBase64)
-});
+    const reqRes1 = makeReqRes("Deduplication exact call counting text.")
+    const reqRes2 = makeReqRes("Deduplication exact call counting text.")
+
+    await Promise.all([
+      speakRoute.handler(reqRes1.req, reqRes1.res),
+      speakRoute.handler(reqRes2.req, reqRes2.res),
+    ])
+
+    assert.equal(reqRes1.res.statusCode, 200)
+    assert.equal(reqRes2.res.statusCode, 200)
+    const json1 = JSON.parse(reqRes1.res.body)
+    const json2 = JSON.parse(reqRes2.res.body)
+    assert.equal(json1.ok, true)
+    assert.equal(json2.ok, true)
+    assert.equal(json1.audioBase64, json2.audioBase64)
+    assert.equal(synthCalls, 1, "Two concurrent requests for identical text must invoke provider fetch exactly once")
+  } finally {
+    globalThis.fetch = origFetch
+  }
+})

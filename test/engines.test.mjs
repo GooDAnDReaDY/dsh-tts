@@ -1,3 +1,54 @@
+function makeValidModelFetch(delay = 0, onCall = null) {
+  return async (url) => {
+    if (onCall) onCall(url)
+    if (delay > 0) await new Promise((r) => setTimeout(r, delay))
+    const urlStr = String(url || '')
+    if (urlStr.endsWith('.json') || urlStr.includes('voices')) {
+      const data = Buffer.from(JSON.stringify({ default: 'en' }).padEnd(1024, ' '))
+      return {
+        ok: true,
+        headers: new Map([['content-length', String(data.length)]]),
+        arrayBuffer: async () => data,
+        body: {
+          getReader() {
+            let sent = false
+            return {
+              async read() {
+                if (sent) return { done: true }
+                sent = true
+                return { done: false, value: data }
+              }
+            }
+          }
+        }
+      }
+    }
+    const data = Buffer.alloc(1024)
+    data[0] = 0x08
+    for (let i = 1; i < 1024; i++) data[i] = i % 256
+    return {
+      ok: true,
+      headers: new Map([['content-length', '1024']]),
+      arrayBuffer: async () => data,
+      body: {
+        getReader() {
+          let chunksRemaining = 50
+          return {
+            async read() {
+              if (chunksRemaining <= 0) return { done: true }
+              chunksRemaining--
+              const chunk = Buffer.alloc(100)
+              if (chunksRemaining === 49) chunk[0] = 0x08
+              for (let i = (chunksRemaining === 49 ? 1 : 0); i < 100; i++) chunk[i] = (chunksRemaining * 100 + i) % 256
+              return { done: false, value: chunk }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import fs from 'node:fs'
@@ -52,11 +103,7 @@ test('detectGPU resolves a boolean without throwing', async () => {
 test('ModelManager handles install, status, and delete with mocked fetch', async () => {
   const tmpRoot = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'dsh-tts-manager-test-'))
   try {
-    const mockFetch = async () => ({
-      ok: true,
-      headers: new Map([['content-length', '1024']]),
-      arrayBuffer: async () => Buffer.alloc(1024, 1),
-    })
+    const mockFetch = makeValidModelFetch(0)
     const mm = createModelManager({ root: tmpRoot, fetchImpl: mockFetch })
     const initialStatus = await mm.getStatus('kokoro')
     assert.equal(initialStatus.installed, false)
@@ -95,15 +142,12 @@ test('ModelManager tracks sanitized errors on install failure and clears on reco
   const tmpRoot = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'dsh-tts-manager-err-test-'))
   try {
     let shouldFail = true
-    const mockFetch = async (url) => {
+    const validFetch = makeValidModelFetch(0)
+    const mockFetch = async (url, opts) => {
       if (shouldFail) {
         throw new Error(`Failed to fetch from ${url}`)
       }
-      return {
-        ok: true,
-        headers: new Map([['content-length', '1024']]),
-        arrayBuffer: async () => Buffer.alloc(1024, 1),
-      }
+      return validFetch(url, opts)
     }
     const mm = createModelManager({ root: tmpRoot, fetchImpl: mockFetch })
 

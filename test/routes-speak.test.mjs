@@ -74,7 +74,7 @@ test('speak handler returns JSON error instead of crashing when chain fails', as
   }
   registerHttpRoutes(ctx, api)
   const speak = ctx.routes.find((r) => r && r.path === '/dsh-tts/speak')
-  const { req, res } = mockReqRes({ body: JSON.stringify({ text: 'hello' }) })
+  const { req, res } = mockReqRes({ body: JSON.stringify({ text: 'hello', channel: 'web' }) })
   await speak.handler(req, res)
   assert.equal(res.statusCode, 502)
   const parsed = JSON.parse(res.body)

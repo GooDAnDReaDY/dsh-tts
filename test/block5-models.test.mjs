@@ -1,3 +1,54 @@
+function makeValidModelFetch(delay = 0, onCall = null) {
+  return async (url) => {
+    if (onCall) onCall(url)
+    if (delay > 0) await new Promise((r) => setTimeout(r, delay))
+    const urlStr = String(url || '')
+    if (urlStr.endsWith('.json') || urlStr.includes('voices')) {
+      const data = Buffer.from(JSON.stringify({ default: 'en' }).padEnd(1024, ' '))
+      return {
+        ok: true,
+        headers: new Map([['content-length', String(data.length)]]),
+        arrayBuffer: async () => data,
+        body: {
+          getReader() {
+            let sent = false
+            return {
+              async read() {
+                if (sent) return { done: true }
+                sent = true
+                return { done: false, value: data }
+              }
+            }
+          }
+        }
+      }
+    }
+    const data = Buffer.alloc(1024)
+    data[0] = 0x08
+    for (let i = 1; i < 1024; i++) data[i] = i % 256
+    return {
+      ok: true,
+      headers: new Map([['content-length', '1024']]),
+      arrayBuffer: async () => data,
+      body: {
+        getReader() {
+          let chunksRemaining = 50
+          return {
+            async read() {
+              if (chunksRemaining <= 0) return { done: true }
+              chunksRemaining--
+              const chunk = Buffer.alloc(100)
+              if (chunksRemaining === 49) chunk[0] = 0x08
+              for (let i = (chunksRemaining === 49 ? 1 : 0); i < 100; i++) chunk[i] = (chunksRemaining * 100 + i) % 256
+              return { done: false, value: chunk }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
 import { EventEmitter } from 'node:events'
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
@@ -133,15 +184,7 @@ test('Block 5: #178 - concurrency lock joins in-flight download and uses unique 
   const tmpRoot = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'dsh-tts-b5-lock-'))
   try {
     let callCount = 0
-    const mockFetch = async () => {
-      callCount++
-      await new Promise((r) => setTimeout(r, 20))
-      return {
-        ok: true,
-        headers: new Map([['content-length', '1024']]),
-        arrayBuffer: async () => Buffer.alloc(1024, 1),
-      }
-    }
+    const mockFetch = makeValidModelFetch(20, () => { callCount++ })
     const mm = createModelManager({ root: tmpRoot, fetchImpl: mockFetch })
 
     // Launch two parallel installs for kokoro
@@ -163,23 +206,7 @@ test('Block 5: #177 - streaming download with multiple chunks does not leak Even
   const tmpRoot = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'dsh-tts-b5-leak-'))
   try {
     // Deliver 50 chunks via reader
-    const mockFetch = async () => {
-      let chunksRemaining = 50
-      return {
-        ok: true,
-        body: {
-          getReader() {
-            return {
-              async read() {
-                if (chunksRemaining <= 0) return { done: true }
-                chunksRemaining--
-                return { done: false, value: Buffer.alloc(100, 2) } // 50 * 100 = 5000 bytes > 1024
-              },
-            }
-          },
-        },
-      }
-    }
+    const mockFetch = makeValidModelFetch(0)
 
     const mm = createModelManager({ root: tmpRoot, fetchImpl: mockFetch })
     const installed = await mm.installModel('kokoro', { fetchImpl: mockFetch })

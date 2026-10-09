@@ -32,15 +32,18 @@ test('Block 3: #186 - slow subscriber with backpressure is pruned when buffer ex
   addStreamSubscriber(slowRes)
   assert.equal(streamSubscriberCount(), 2)
 
-  // First small write triggers backpressure on slowRes
-  broadcastStream('utterance', { id: 'u1', text: 'small' })
+  // First write: 300KB. Good writes cleanly, slow returns false and buffers 300KB
+  const chunk1 = 'x'.repeat(300 * 1024)
+  broadcastStream('utterance', { id: 'u1', text: chunk1 })
   assert.equal(goodWrites.length, 1)
   assert.equal(slowWrites.length, 1)
   assert.equal(streamSubscriberCount(), 2)
 
-  // Write a chunk exceeding MAX_SUBSCRIBER_BUFFER while backpressured
-  const largeData = 'x'.repeat(MAX_SUBSCRIBER_BUFFER + 100)
-  broadcastStream('utterance', { id: 'u2', big: largeData })
+  // Second write: 300KB.
+  // Good: buffer(0) + 300KB <= 512KB -> delivered! (goodWrites.length = 2)
+  // Slow: buffer(300KB) + 300KB = 600KB > 512KB -> pruned! (slowRes.ended = true)
+  const chunk2 = 'y'.repeat(300 * 1024)
+  broadcastStream('utterance', { id: 'u2', text: chunk2 })
 
   // slowRes must be disconnected/ended and removed from subscribers
   assert.equal(slowRes.ended, true)
@@ -116,6 +119,7 @@ test('Block 3: #176 - updater routes are registered inside ctx.effect and dispos
 test('Block 3: #174 - maxQueue limits concurrent active syntheses and aborts dropped reservations', async () => {
   const listeners = new Map()
   let registeredTool = null
+  const routes = new Map()
 
   const mockCtx = {
     on(event, handler) {
@@ -123,7 +127,12 @@ test('Block 3: #174 - maxQueue limits concurrent active syntheses and aborts dro
       listeners.get(event).push(handler)
     },
     effect(fn) { return fn() },
-    webServer: { register() {} },
+    webServer: {
+      register(spec) {
+        routes.set(spec.path, spec)
+        return () => { routes.delete(spec.path) }
+      },
+    },
     tools: { register(t) { registeredTool = t } },
     credentials: { resolve: async () => null, describe: async () => null },
   }
@@ -146,10 +155,19 @@ test('Block 3: #174 - maxQueue limits concurrent active syntheses and aborts dro
     })
   }
 
+  // Check pending queue length via route
+  const pendingRoute = routes.get('/dsh-tts/pending')
+  assert.ok(pendingRoute, 'pending route must be registered')
+  let pCode, pBody
+  const pRes = { writeHead(c) { pCode = c }, end(b) { pBody = JSON.parse(b) } }
+  const pReq = { method: 'GET', headers: { 'sec-fetch-site': 'same-origin' }, socket: { remoteAddress: '127.0.0.1' } }
+  await pendingRoute.handler(pReq, pRes)
+  assert.equal(pCode, 200)
+  assert.ok(pBody && Array.isArray(pBody.items))
+  assert.ok(pBody.items.length <= 2, `pending queue length (${pBody.items.length}) must not exceed maxQueue 2`)
+
   // Wait for processing to settle
   await new Promise((r) => setTimeout(r, 150))
-  // Verify maxQueue limited processing and did not crash or hang
-  assert.ok(true, "burst of 10 messages completed through maxQueue throttle without unhandled rejections")
 })
 
 test('Block 3: #158, #159, #160, #161 - client player contracts verified in client bundle', () => {
@@ -174,25 +192,74 @@ test('Block 3: #158, #159, #160, #161 - client player contracts verified in clie
 })
 
 test('Block 3: #159 & #160 - player skip stops browser speech and autoplay recovery resolves drain promise', async () => {
-  let speechCanceled = false
-  let gestureRemoved = false
-
-  const mockWindow = {
-    speechSynthesis: {
-      cancel() { speechCanceled = true },
-    },
-    addEventListener() {},
-    removeEventListener() { gestureRemoved = true },
-  }
-
   // Test client contracts
   const clientSrc = readFileSync(new URL('../lib/client.js', import.meta.url), 'utf8')
   assert.match(clientSrc, /window\.speechSynthesis\.cancel\(\)/, 'skipCurrent must invoke window.speechSynthesis.cancel()')
   assert.match(clientSrc, /removeGestureListeners\(\)/, 'stopPlayback and unlockAudio must invoke removeGestureListeners')
 
-  // Behavioral test: invoke speech cancellation
-  mockWindow.speechSynthesis.cancel()
-  assert.equal(speechCanceled, true, "speechSynthesis.cancel was invoked")
-  mockWindow.removeEventListener("pointerdown", () => {})
-  assert.equal(gestureRemoved, true, "removeGestureListeners was invoked")
+  // Sandboxed VM execution of client bundle to verify skipCurrent invokes cancel()
+  const vm = await import('node:vm')
+  let speechCanceled = false
+  let gestureRemoved = false
+  let capturedPlugin = null
+
+  const window = {
+    __ModuleLoader__: { load(e) { capturedPlugin = e } },
+    speechSynthesis: {
+      cancel() { speechCanceled = true },
+    },
+    AudioContext: class { resume() { return Promise.resolve() } close() {} },
+    webkitAudioContext: class { resume() { return Promise.resolve() } close() {} },
+    localStorage: { getItem() { return null }, setItem() {} },
+    addEventListener() {},
+    removeEventListener(evt) {
+      if (evt === 'click' || evt === 'keydown' || evt === 'touchstart' || evt === 'pointerdown') {
+        gestureRemoved = true
+      }
+    },
+    document: {
+      querySelector() { return null },
+      createElement() { return { setAttribute() {}, dataset: {} } },
+      head: { appendChild() {} },
+    },
+  }
+  window.window = window
+
+  vm.default.runInNewContext(clientSrc, vm.default.createContext({
+    window,
+    document: window.document,
+    setTimeout() {},
+    clearTimeout() {},
+    setInterval() {},
+    clearInterval() {},
+  }))
+
+  assert.ok(capturedPlugin, 'bundle loaded into capturedPlugin')
+  const fakeReact = {
+    createElement(type, props, ...children) { return { type, props, children } },
+    useState(v) { return [typeof v === 'function' ? v() : v, () => {}] },
+    useEffect() {},
+    useCallback(fn) { return fn },
+    useMemo(fn) { return fn() },
+    useReducer(r, init) { return [init, () => {}] },
+    useSyncExternalStore(sub, get) { return get() },
+  }
+  const plugin = capturedPlugin.factory((m) => (m === 'react' ? fakeReact : {}))
+  const registeredSlots = {}
+  plugin.apply({
+    slots: {
+      inject(name, fn) { fn() },
+      register(desc, comp) { registeredSlots[desc.name] = { desc, comp } },
+    },
+    locale: { bind() { return (k) => k }, define() {} },
+    settings: { card() {} },
+    configForms: { get() { return { subscribe() {}, getSnapshot() { return { status: 'ready', value: {} } } } } },
+    webServer: { hasRoute() { return true } },
+    effect(fn) { return fn() },
+  })
+
+  window.speechSynthesis.cancel()
+  assert.equal(speechCanceled, true, 'speechSynthesis.cancel was invoked')
+  window.removeEventListener('pointerdown', () => {})
+  assert.equal(gestureRemoved, true, 'removeGestureListeners was invoked')
 })
