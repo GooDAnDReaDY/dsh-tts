@@ -46,6 +46,49 @@ test('client runtime sandbox boots bundle and executes player lifecycle without 
 
   assert.ok(captured, 'bundle must register via __ModuleLoader__')
   assert.equal(captured.id, '@goodandready/dsh-tts')
+
+  // Explicitly call factory and execute plugin lifecycle (#181)
+  const fakeReact = {
+    createElement(type, props, ...children) { return { type, props, children } },
+    useState(v) { return [typeof v === 'function' ? v() : v, () => {}] },
+    useEffect() {},
+    useCallback(fn) { return fn },
+    useMemo(fn) { return fn() },
+    useReducer(r, init) { return [init, () => {}] },
+    useSyncExternalStore(sub, get) { return get() },
+  }
+  const plugin = captured.factory((mod) => (mod === 'react' ? fakeReact : {}))
+  assert.ok(plugin, 'captured.factory must return plugin instance')
+  assert.equal(typeof plugin.apply, 'function')
+
+  const registered = {}
+  const mockCtx = {
+    slots: {
+      inject(name, fn) { fn() },
+      register(desc, comp) { registered[desc.name] = { desc, comp } },
+    },
+    locale: {
+      bind() { return (key) => key },
+      define() {},
+    },
+    settings: {
+      card(desc, comp) { registered['settings.card'] = { desc, comp } },
+    },
+    configForms: {
+      get() { return { subscribe() {}, getSnapshot() { return { status: 'ready', value: {} } } } },
+    },
+    webServer: { hasRoute() { return true } },
+    effect(fn) { return fn() },
+  }
+
+  plugin.apply(mockCtx)
+  assert.ok(registered['settings.plugin.item'], 'settings plugin item registered')
+  assert.ok(registered['conversation.input.dock'], 'dock component registered')
+  assert.equal(typeof registered['conversation.input.dock'].comp, 'function')
+  const cardComp = registered['settings.plugin.item'].comp
+  const renderedCard = cardComp()
+  assert.ok(renderedCard, 'settings card component rendered successfully')
+  assert.equal(renderedCard.type, 'li')
 })
 
 test('client factory registers scoped package id', () => {
