@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.4.33 (2026-10-11)
+
+- **SSE Stream Watchdog**: Added idle timeout watchdog (30s) in Web player (`lib/client-src/20-player.js`) to automatically trigger reconnect on stale/frozen EventSource connection (#206).
+- **Engine Manager Cleanup**: Added explicit `removeEventListener('abort', ...)` in `execute` finally block for model downloads in `lib/engines/manager.js` (#206).
+- **Updater Testing**: Added behavioral test capturing `child_process.spawn` arguments during `/api/dsh-tts/update` execution verifying no bypass of minimum release age (#206).
+- **Client Bundle**: Rebuilt `lib/client.js` from canonical client-src fragments with idle watchdog.
+
 ## 0.4.32
 
 ### Fixed
