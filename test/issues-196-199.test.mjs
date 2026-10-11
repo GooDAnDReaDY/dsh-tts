@@ -7,13 +7,84 @@ import { registerPluginUpdater } from '../lib/updater.js'
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), '..')
 
-test('Issue #196: updater does NOT pass --config.minimumReleaseAge=0 in spawn argv', () => {
+test('Issue #196: updater does NOT pass --config.minimumReleaseAge=0 in spawn argv (behavioral)', async () => {
   const updaterCode = fs.readFileSync(path.join(root, 'lib/updater.js'), 'utf8')
   assert.equal(
     updaterCode.includes('--config.minimumReleaseAge=0'),
     false,
     'lib/updater.js must never bypass pnpm quarantine via --config.minimumReleaseAge=0'
   )
+
+  const events = await import('node:events')
+  const capturedArgs = []
+
+  const mockSpawn = (command, args, options) => {
+    capturedArgs.push({ command, args, options })
+    const fakeChild = new events.EventEmitter()
+    fakeChild.stdout = new events.EventEmitter()
+    fakeChild.stderr = new events.EventEmitter()
+    fakeChild.kill = () => {}
+    process.nextTick(() => {
+      fakeChild.emit('exit', 0)
+    })
+    return fakeChild
+  }
+
+  // Set fake DSH CLI entry in environment so target.cliEntry is defined
+  const origCli = process.env.DSH_CLI_ENTRY
+  process.env.DSH_CLI_ENTRY = '/usr/bin/dsh'
+
+  try {
+    let handler = null
+    const mockCtx = {
+      effect(fn) { fn() },
+      webServer: {
+        register(route) {
+          if (route.path === '/api/dsh-tts/update') handler = route.handler
+        },
+      },
+    }
+    registerPluginUpdater(mockCtx, {
+      endpoint: '/api/dsh-tts/update',
+      manifestUrl: path.join(root, 'package.json'),
+      packageName: '@goodandready/dsh-tts',
+      registry: 'https://registry.npmjs.org/',
+      spawnImpl: mockSpawn,
+      latestVersionImpl: async () => '99.99.99',
+    })
+
+    assert.ok(handler, 'updater route /api/dsh-tts/update must be registered')
+    let statusCode = 0
+    let written = ''
+    const req = {
+      method: 'POST',
+      socket: { remoteAddress: '127.0.0.1' },
+      headers: {
+        'x-dsh-plugin-update': '1',
+        host: '127.0.0.1:3000',
+        origin: 'http://127.0.0.1:3000',
+      },
+    }
+    const res = {
+      writeHead(code) { statusCode = code },
+      end(d) { written = d },
+    }
+    await handler(req, res)
+
+    // Verify spawn was called and none of the args bypass release age
+    assert.ok(capturedArgs.length > 0, 'updater must invoke child_process.spawn')
+    const spawned = capturedArgs[0]
+    assert.equal(
+      spawned.args.some((arg) => typeof arg === 'string' && arg.includes('minimumReleaseAge')),
+      false,
+      'spawn args must not contain minimumReleaseAge'
+    )
+    assert.ok(spawned.args.includes('plugin'), 'spawn args must target dsh plugin CLI')
+    assert.ok(spawned.args.includes('add'), 'spawn args must perform plugin add')
+  } finally {
+    if (origCli === undefined) delete process.env.DSH_CLI_ENTRY
+    else process.env.DSH_CLI_ENTRY = origCli
+  }
 })
 
 test('Issue #197: all --dsw-alias-* theme tokens in client-src are canonical (no legacy tokens)', () => {
