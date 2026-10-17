@@ -187,8 +187,12 @@ test('Block 3: #158, #159, #160, #161 - client player contracts verified in clie
   assert.match(clientSrc, /player\.queue\.unshift\(item\)/, 'blocked autoplay item must be put back in queue')
   assert.match(clientSrc, /function unlockAudio\(\)/, 'client must define unlockAudio')
 
-  // #161: SpeakerControl preserves access to history and favorites in idle
-  assert.match(clientSrc, /hasHistory \|\| active/, 'SpeakerControl must show history button when hasHistory')
+  // #161 & #208: History preserved via per-message context menu, transport in message row
+  assert.match(clientSrc, /recent\.list\(\)\.items/, 'client must provide access to recent speech history')
+  assert.match(clientSrc, /conversation\.chat\.assistant-actions/, 'client must register assistant-actions slot')
+  assert.match(clientSrc, /dts-transport/, 'client must define in-row transport cluster')
+  assert.match(clientSrc, /replayLast\(\)/, 'client must define replayLast')
+  assert.match(clientSrc, /isSpeakingNow\(\)/, 'client must define isSpeakingNow')
 })
 
 test('Block 3: #159 & #160 - player skip stops browser speech and autoplay recovery resolves drain promise', async () => {

@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.4.34 (2026-10-17)
+
+- **Per-Reply Speak Action** (#208, GitHub PR #2):
+  - Added dedicated speaker button to `conversation.chat.assistant-actions` (order 5), positioned beside copy action to read rendered assistant turn text directly from the DOM.
+  - Added in-row transport cluster next to the reply clock (pause, stop, skip, export) that remains visible during playback even when mouse leaves message row.
+- **Context Menu & Contained Scroll** (#208, GitHub PR #2):
+  - Added right-click context menu on the speaker action to display recent utterances with contained wheel scrolling that prevents closing on scroll.
+- **Hotkeys & Playback Enhancements** (#208, GitHub PR #2):
+  - Added `Shift+Space` hotkey to stop active playback or instantly replay the last utterance from memory cache (`player.lastItem`).
+  - Added `statusKnown` guard in SSE event handling to prevent dropping initial stream utterances during server startup.
+  - Primed pending audio poll immediately on mount and on audio unlock gesture.
+- **Client Bundle**: Rebuilt `lib/client.js` from canonical `lib/client-src/` fragments with updated tests.
+
 ## 0.4.33 (2026-10-11)
 
 - **SSE Stream Watchdog**: Added idle timeout watchdog (30s) in Web player (`lib/client-src/20-player.js`) to automatically trigger reconnect on stale/frozen EventSource connection (#206).
