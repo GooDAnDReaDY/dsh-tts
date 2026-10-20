@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.4.35 (2026-10-20)
+
+### Fixed
+- **Authentication Guard for Administrative and Credential Routes** (#210):
+  - Enforced DSH core connection authentication (`connection.requestRejection(req)`) across all `/dsh-tts/*` HTTP endpoints.
+  - Fail-closed: Remote LAN clients without an authenticated operator session or token are rejected with 401/403 and cannot manage credentials or mutate plugin configuration (`PUT/DELETE /dsh-tts/credential`, `PUT /dsh-tts/config`, `/dsh-tts/models/install`, `/dsh-tts/models/delete`, `/dsh-tts/cache/clear`).
+  - Permitted authenticated operators via DSH connection service to manage provider credentials and configuration from LAN or remote interfaces.
+  - Added helpers `getClientIp(req)`, `isLanAddress(address)`, and `getRejectionStatus(req, options)` with comprehensive unit test coverage.
+
 ## 0.4.34 (2026-10-17)
 
 - **Per-Reply Speak Action** (#208, GitHub PR #2):
