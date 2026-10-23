@@ -107,6 +107,7 @@
 - 2026-09-26 — Publication boundary & package hygiene (#140): `package.json` excludes `scripts/` and `lib/client-src/` from published npm archive, preserving strict runtime-only surface (`test/pack.test.mjs`).
 - 2026-09-26 — Model install error durability (#141): `modelManager` records sanitized failure states in `lastErrors`, surfaces failure in `getStatus`, and clears on retry/deletion.
 - 2026-10-20 — Authentication guard for settings and credential routes (#210): Enforced DSH connection service authentication (connection.requestRejection(req)) across all /dsh-tts/* endpoints. Unauthenticated remote/LAN callers are rejected with 401/403 (fail-closed) on administrative mutations (credentials, config, models, cache), preventing unauthenticated credential manipulation while admitting authenticated operators.
+- 2026-10-23 — Edge transient error retry (#212, GitHub #4): edgeSpeak retries transient NoAudioReceived errors and empty files (< 32 bytes) up to 3 times with exponential/linear backoff and outFile cleanup, abort-signal awareness, and fast failure on ENOENT before tripping provider circuit breaker or falling back to local lower-quality engines.
 
 ## Superseded notes
 Earlier free-form notes under docs/superpowers/ are retired; this file and docs/plans/ are canonical.
