@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.4.36 (2026-10-23)
+
+### Fixed
+- **Edge TTS Transient Error Retry** (#212, GitHub #4):
+  - Retries transient `edge_tts.exceptions.NoAudioReceived` errors and empty audio payloads (`< 32` bytes) up to 3 times before failing or tripping circuit breaker.
+  - Automatically cleans up corrupt/empty audio artifacts between retry attempts.
+  - Honors `req.signal` (AbortSignal) cancellation during backoff delays without hanging.
+  - Fails fast on `ENOENT` / missing binary without wasting retry cycles.
+
 ## 0.4.35 (2026-10-20)
 
 ### Fixed
