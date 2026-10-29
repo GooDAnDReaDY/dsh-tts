@@ -76,7 +76,11 @@ test('Block 6: #184 - DEV internal documentation exists in DEV repo and is exclu
   assert.ok(fs.existsSync(path.join(root, 'docs/deployment.md')), 'docs/deployment.md must exist in DEV repo')
 })
 
-test('Block 6: #185 - publish-github.sh correctly excludes lib/client-src/ from sanitized tree', () => {
+test('Block 6: #185 - publish-github.sh correctly excludes lib/client-src/ from sanitized tree', (t) => {
+  if (!fs.existsSync(path.join(root, '.git'))) {
+    t.skip('.git directory not present (e.g. git archive)')
+    return
+  }
   const out = execSync('bash scripts/publish-github.sh --check', { cwd: root, encoding: 'utf8' })
   assert.match(out, /WILL BE PUBLISHED/, 'must run publish-github check')
   const willBePublished = out.split('WILL BE DROPPED')[0]

@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.4.37 (2026-10-29)
+
+### Fixed
+- **LAN Bridge Access Control Hardening** (#214):
+  - Prevented remote clients from LAN or Tailscale behind `dsh-lanmode` proxy bridge from bypassing administrative route authorization.
+  - Bridge-injected loopback authority cookies (`dsh-auth-...`) are identified and rejected for remote forwarded callers (`X-Forwarded-For`), requiring genuine client session credentials (`dsh_token=`, `dsh_lan_pin=`, `dsh_auth_session=`, non-loopback `dsh-auth-...`, or Bearer token).
+  - Enforced strict `Origin` or `Referer` validation matching `Host` on sensitive state-mutating endpoints (`PUT/DELETE /dsh-tts/credential`, `PUT /dsh-tts/config`, `/dsh-tts/models/install`, `/dsh-tts/models/delete`, `/dsh-tts/cache/clear`) to block forged ambient requests.
+  - Integrated `isLanAddress` helper into IP classification logic.
+- **Client Theme Consistency & Code Quality** (#215):
+  - Replaced remaining 24 hardcoded color literals and fallbacks in `lib/client-src/10-styles.js` and `lib/client-src/40-editors.js` with semantic CSS variables (`var(--dsw-alias-...)`) and `color-mix`. Preflight hardcoded color check is clean (0 literals).
+  - Guarded git-specific test assertion in `test/block6-sanitization-hygiene.test.mjs` against environments without `.git` (e.g. `git archive` exports).
+  - Condensed whitespace and blank lines in `lib/client-src/20-player.js` to strictly keep module length below 600 lines (591 lines).
+
 ## 0.4.36 (2026-10-23)
 
 ### Fixed

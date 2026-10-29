@@ -108,6 +108,7 @@
 - 2026-09-26 — Model install error durability (#141): `modelManager` records sanitized failure states in `lastErrors`, surfaces failure in `getStatus`, and clears on retry/deletion.
 - 2026-10-20 — Authentication guard for settings and credential routes (#210): Enforced DSH connection service authentication (connection.requestRejection(req)) across all /dsh-tts/* endpoints. Unauthenticated remote/LAN callers are rejected with 401/403 (fail-closed) on administrative mutations (credentials, config, models, cache), preventing unauthenticated credential manipulation while admitting authenticated operators.
 - 2026-10-23 — Edge transient error retry (#212, GitHub #4): edgeSpeak retries transient NoAudioReceived errors and empty files (< 32 bytes) up to 3 times with exponential/linear backoff and outFile cleanup, abort-signal awareness, and fast failure on ENOENT before tripping provider circuit breaker or falling back to local lower-quality engines.
+- 2026-10-29 — LAN & bridge access control hardening (#214, #215): Disallowed loopback authority cookie forgery for forwarded bridge callers (X-Forwarded-For non-loopback); callers must present genuine client credentials or tokens. Strict Origin/Referer verification enforced on sensitive mutating routes (PUT/DELETE /credential, PUT /config, /models/*, /cache/clear). Purged all hardcoded colors in WebUI in favor of semantic CSS variables.
 
 ## Superseded notes
 Earlier free-form notes under docs/superpowers/ are retired; this file and docs/plans/ are canonical.
