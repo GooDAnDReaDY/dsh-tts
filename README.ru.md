@@ -194,7 +194,7 @@ dsh-tts:
 
 ### Покрытие настроек в UI
 
-Карточка плагина (**Настройки → Плагины → Настройки плагинов**) показывает все пользовательские поля схемы, включая блок **Дополнительно**: `maxChars`, `sentenceChars`, `timeoutMs`, `maxQueue`, `openaiBaseUrl`, `mimoBaseUrl`, `mimoFormat`, `minimaxBin`, `doubaoAppId`, `doubaoCluster`, `doubaoBaseUrl`, `deepseekWebBaseUrl`.
+Карточка плагина (**Настройки → Плагины → Настройки плагинов**) показывает все пользовательские поля схемы, включая блок **Дополнительно**: `maxChars`, `sentenceChars`, `timeoutMs`, `maxQueue`, `openaiBaseUrl`, `mimoBaseUrl`, `mimoFormat`, `minimaxBin`, `doubaoAppId`, `doubaoCluster`, `doubaoBaseUrl`, `deepseekWebBaseUrl`, `cosyvoiceUrl`.
 
 **API-ключи не хранятся в настройках плагина.** Вставляйте их в редакторе цепочки — значение уходит в credential store DSH через `PUT /dsh-tts/credential`.
 

@@ -150,6 +150,7 @@ graph LR
 | `groq` | Groq TTS | `playai-tts` | `default` | `GROQ_API_KEY` | Near-instant inference speed |
 | `openrouter` | OpenRouter Audio | `openai/gpt-4o-mini-tts` | `alloy` | `OPENROUTER_API_KEY` | Unified router access |
 | `custom` | Custom OpenAI-compatible | Configurable | Configurable | `CUSTOM_TTS_API_KEY` | Any `/v1/audio/speech` endpoint |
+| `cosyvoice` | Alibaba CosyVoice Local | `CosyVoice2-0.5B` | `alex` | *None* | State-of-the-art local neural voice engine |
 | `piper` | Local Piper ONNX | Local ONNX weights | Model default | *None* | 100% offline neural engine |
 | `espeak` | Local eSpeak NG | System synth | `ru` / `en` | *None* | 100% offline lightweight fallback |
 
@@ -211,7 +212,7 @@ dsh-tts:
 
 ### Settings UI coverage
 
-The plugin settings card (**Settings → Plugins → Plugin settings**) exposes every user-facing schema field, including an **Advanced** block for `maxChars`, `sentenceChars`, `timeoutMs`, `maxQueue`, `openaiBaseUrl`, `mimoBaseUrl`, `mimoFormat`, and `minimaxBin`, `doubaoAppId`, `doubaoCluster`, `doubaoBaseUrl`, and `deepseekWebBaseUrl`.
+The plugin settings card (**Settings → Plugins → Plugin settings**) exposes every user-facing schema field, including an **Advanced** block for `maxChars`, `sentenceChars`, `timeoutMs`, `maxQueue`, `openaiBaseUrl`, `mimoBaseUrl`, `mimoFormat`, and `minimaxBin`, `doubaoAppId`, `doubaoCluster`, `doubaoBaseUrl`, `deepseekWebBaseUrl`, and `cosyvoiceUrl`.
 
 Provider **API keys are never stored in plugin settings**. Paste them in the chain editor; values go to the DSH credential store via `PUT /dsh-tts/credential`.
 

@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.4.41 (2026-11-08)
+
+### Added
+- **Alibaba CosyVoice Local Provider** (#222):
+  - Integrated local CosyVoice / CosyVoice-2 engine (`cosyvoice`) in `lib/providers/local.js`.
+  - Added configuration parameter `cosyvoiceUrl` (default `http://127.0.0.1:9233`) with automatic fallback to `/tts`.
+  - Default model `CosyVoice2-0.5B` and speaker `alex`.
+- **Drop-in Voice Cloning via Audio Sample** (#227):
+  - Added `POST /dsh-tts/voice/clone` supporting Instant Voice Cloning and local reference audio persistence in `lib/routes.js`.
+  - Validates audio samples, file integrity, and isolates storage securely in profile voice directory.
+
 ## 0.4.40 (2026-11-08)
 
 ### Added
