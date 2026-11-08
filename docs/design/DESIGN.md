@@ -30,6 +30,10 @@
   - Трёхъязычная документация: `README.md` (EN), `README.ru.md` (RU), `README.zh.md` (ZH).
   - Дизайн-контракт: `docs/design/DESIGN.md`.
 
+### Supported Providers
+- Cloud: `openai`, `elevenlabs`, `google`, `azure`, `groq`, `deepgram`, `openrouter`, `siliconflow`, `deepinfra`, `fireworks`, `mimo`, `doubao`, `deepseek-web`, `custom`.
+- Local: `kokoro`, `f5`, `edge`, `piper`, `espeak`, `minimax`.
+
 ## Visual Direction
 - Атмосфера: Нативный компонент DeepSeek Harness, строго следующий единому дизайн-коду экосистемы DSH.
 - Утверждённые референсы и что из них берём:

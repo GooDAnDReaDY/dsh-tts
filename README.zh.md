@@ -137,6 +137,8 @@ graph LR
 | `fireworks` | Fireworks AI | `kokoro` | 默认 | `FIREWORKS_API_KEY` | 毫秒级 Kokoro 推理 |
 | `minimax` | MiniMax Speech | `speech-01-turbo` | 默认 | `MINIMAX_API_KEY` | 高表现力中文旗舰发音 |
 | `mimo` | 小米 MiMo Audio | `mimo-v2.5-tts` | 默认 | `MIMO_API_KEY` | 低延迟流式语音 |
+| `doubao` | 字节跳动火山引擎豆包 | `seed-tts-1.0` | `BV001_streaming` | `DOUBAO_API_KEY` | 高表现力 Doubao Seed-TTS 1.0 语音引擎 |
+| `deepseek-web` | DeepSeek Web 语音网桥 | `deepseek-chat` | 默认 | `DEEPSEEK_WEB_TOKEN` | 直连官方 Web 会话的 DeepSeek 原声合成 |
 | `google` | Google Cloud TTS | `gemini-2.5-flash-preview-tts` | 语种默认 | `GEMINI_API_KEY` | 谷歌 Gemini 多语种神经网络合成 |
 | `azure` | Azure 认知语音 | `en-US-JennyNeural` | 区域默认 | `AZURE_SPEECH_KEY` | 企业级神经网络发音人 |
 | `deepgram` | Deepgram Aura | `aura-asteria-en` | `asteria` | `DEEPGRAM_API_KEY` | 极低延迟英文输出 |
@@ -161,7 +163,7 @@ dsh plugin --profile web add @goodandready/dsh-tts
 
 ### 设置界面覆盖
 
-插件设置卡片（**设置 → 插件 → 插件设置**）展示全部用户向 schema 字段，并含 **Advanced** 区：`maxChars`、`sentenceChars`、`timeoutMs`、`maxQueue`、`openaiBaseUrl`、`mimoBaseUrl`、`mimoFormat`、`minimaxBin`。
+插件设置卡片（**设置 → 插件 → 插件设置**）展示全部用户向 schema 字段，并含 **Advanced** 区：`maxChars`、`sentenceChars`、`timeoutMs`、`maxQueue`、`openaiBaseUrl`、`mimoBaseUrl`、`mimoFormat`、`minimaxBin`、`doubaoAppId`、`doubaoCluster`、`doubaoBaseUrl`、`deepseekWebBaseUrl`。
 
 API 密钥不写入插件设置，只在链编辑器粘贴，经 `PUT /dsh-tts/credential` 写入 DSH credential store。
 
