@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.4.40 (2026-11-08)
+
+### Added
+- **Doubao Seed-TTS Provider (ByteDance / Volcengine)** (#221):
+  - Integrated Volcengine Seed-TTS 1.0 engine (`doubao`) in `lib/providers/cloud.js`.
+  - Added configuration parameters: `doubaoAppId`, `doubaoCluster`, `doubaoBaseUrl`, `doubaoKeyEnv`.
+  - Built-in credential resolution with safe storage via `/dsh-tts/credential`.
+  - Default model `seed-tts-1.0` with `BV001_streaming` voice.
+- **DeepSeek Web Audio Bridge** (#223):
+  - Integrated official web session voice bridge (`deepseek-web`) in `lib/providers/cloud.js`.
+  - Added configuration parameters: `deepseekWebKeyEnv`, `deepseekWebBaseUrl`.
+  - Supports direct bearer session token and automatic fallback to Edge TTS upon network or session expiration.
+
 ## 0.4.39 (2026-11-08)
 
 ### Added

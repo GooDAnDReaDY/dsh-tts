@@ -142,6 +142,8 @@ graph LR
 | `fireworks` | Fireworks AI | `kokoro` | Default | `FIREWORKS_API_KEY` | Ultra-low latency Kokoro inference |
 | `minimax` | MiniMax Speech | `speech-01-turbo` | Default | `MINIMAX_API_KEY` | High-expressiveness neural voice |
 | `mimo` | Xiaomi MiMo Audio | `mimo-v2.5-tts` | Default | `MIMO_API_KEY` | Low-latency streaming TTS |
+| `doubao` | ByteDance Doubao (Volcengine) | `seed-tts-1.0` | `BV001_streaming` | `DOUBAO_API_KEY` | High-fidelity Doubao Seed-TTS 1.0 engine |
+| `deepseek-web` | DeepSeek Web Audio Bridge | `deepseek-chat` | Default | `DEEPSEEK_WEB_TOKEN` | Direct web-session audio bridge for native DeepSeek voice |
 | `google` | Google Cloud TTS | `gemini-2.5-flash-preview-tts` | Language default | `GEMINI_API_KEY` | Multilingual Google Gemini voice synthesis |
 | `azure` | Azure Cognitive Speech | `en-US-JennyNeural` | Region default | `AZURE_SPEECH_KEY` | Enterprise neural synthesis |
 | `deepgram` | Deepgram Aura | `aura-asteria-en` | `asteria` | `DEEPGRAM_API_KEY` | Ultra-low latency voice output |
@@ -209,7 +211,7 @@ dsh-tts:
 
 ### Settings UI coverage
 
-The plugin settings card (**Settings → Plugins → Plugin settings**) exposes every user-facing schema field, including an **Advanced** block for `maxChars`, `sentenceChars`, `timeoutMs`, `maxQueue`, `openaiBaseUrl`, `mimoBaseUrl`, `mimoFormat`, and `minimaxBin`.
+The plugin settings card (**Settings → Plugins → Plugin settings**) exposes every user-facing schema field, including an **Advanced** block for `maxChars`, `sentenceChars`, `timeoutMs`, `maxQueue`, `openaiBaseUrl`, `mimoBaseUrl`, `mimoFormat`, and `minimaxBin`, `doubaoAppId`, `doubaoCluster`, `doubaoBaseUrl`, and `deepseekWebBaseUrl`.
 
 Provider **API keys are never stored in plugin settings**. Paste them in the chain editor; values go to the DSH credential store via `PUT /dsh-tts/credential`.
 
