@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.4.39 (2026-11-08)
+
+### Added
+- **Visual Sentence Karaoke Highlight & Mobile Wake-Lock** (#219):
+  - Added `splitSentencesWithOffsets` in `lib/text.js` tracking character start/end bounds and sentence index across turns.
+  - Added live sentence karaoke highlight (`dts-karaoke-active`) in chat player with subtle theme styling (`var(--dsw-alias-bg-hover)`).
+  - Integrated Screen Wake-Lock API (`navigator.wakeLock`) during speech playback to keep mobile and tablet screens active without premature audio cutoff.
+- **Smart Typing Ducking & Barge-in** (#220):
+  - Added `duckOnTyping` configuration (`duck` [default], `pause`, `stop`, `off`) and settings dropdown.
+  - When user begins typing a reply, synthesized speech volume is automatically ducked to 20% (or paused/stopped according to preference) and smoothly restored upon inactivity.
+
 ## 0.4.38 (2026-11-08)
 
 ### Added
