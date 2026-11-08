@@ -26,7 +26,7 @@ function cardFields() {
     while ((m = re.exec(client))) used.add(m[1])
   }
   // complex editors own these keys
-  for (const k of ['chain', 'roles', 'pronunciation', 'longReply', 'speakReplies', 'duckOnTyping']) used.add(k)
+  for (const k of ['chain', 'roles', 'pronunciation', 'longReply', 'speakReplies', 'duckOnTyping', 'eventChimes']) used.add(k)
   return used
 }
 

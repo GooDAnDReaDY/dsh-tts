@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.4.42 (2026-11-08)
+
+### Added
+- **Visual Voice Packs (1-Click Presets)** (#224):
+  - Curated catalog of 5 distinct voice profiles: Narrator, Energetic Buddy, Calm Lecturer, Cyberpunk Terminal, and Quiet/Night Mode.
+  - Interactive Voice Packs carousel in settings card applying optimal provider, voice, speed rate, and chime in one click.
+- **Agent Event Chimes & Status Audio** (#225):
+  - Configurable lifecycle event chimes: `onTurnComplete`, `onApprovalRequired`, `onError`, `onSubagentStart`, and `onSubagentDone`.
+  - Settings UI table with per-event sound pickers and live status exposure via `/dsh-tts/status`.
+- **Role-based Voices & SSML Emotions** (#226):
+  - Advanced subagent role detection (`detectRolePreset`) mapping personas (reviewer, researcher, brainstormer) to dedicated voice profiles.
+  - SSML emotion markup (`wrapSsmlEmotion`) supporting `cheerful`, `empathetic`, `serious`, `whispering`, and `chat` express-as styles in Edge and Azure TTS.
+
 ## 0.4.41 (2026-11-08)
 
 ### Added

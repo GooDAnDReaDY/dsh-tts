@@ -3,7 +3,7 @@
 - Продукт: Плагин озвучивания ответов агента (Text-to-Speech) для DeepSeek Harness.
 - Владелец: Team GoodAndReady.
 - Аудитория: Пользователи и разработчики DeepSeek Harness, которым требуется голосовой интерфейс, режим hands-free или duplex-диалог.
-- Статус: Active / Production.
+- Статус: Active / Production (v0.4.42).
 
 ## User Surfaces
 - Web/UI:
@@ -22,7 +22,9 @@
   - `GET /dsh-tts/stream` — Server-Sent Events (SSE) для стриминга аудио в реальном времени.
   - `GET /dsh-tts/models/status` & `POST /models/install` & `POST /models/delete` — управление весами локальных моделей.
   - `GET /dsh-tts/integrations` — статус внешних DSH-плагинов.
-  - `POST /dsh-tts/voice/clone` — клонирование голоса по загруженному сэмплу (#227).
+  - `POST /dsh-tts/voice/clone` — клонирование голоса по аудио-сэмплу (#227).
+  - Каталог Voice Packs (#224) и звуки ключевых событий агента Event Chimes (#225).
+  - SSML-эмоции и расширенная ролевая модель агентов (#226). — клонирование голоса по загруженному сэмплу (#227).
   - `POST /dsh-tts/preview` — предпрослушивание голоса/провайдера.
   - `DELETE /dsh-tts/cache` — сброс дискового кэша аудио.
 - CLI:
