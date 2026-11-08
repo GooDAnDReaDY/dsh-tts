@@ -22,6 +22,7 @@
   - `GET /dsh-tts/stream` — Server-Sent Events (SSE) для стриминга аудио в реальном времени.
   - `GET /dsh-tts/models/status` & `POST /models/install` & `POST /models/delete` — управление весами локальных моделей.
   - `GET /dsh-tts/integrations` — статус внешних DSH-плагинов.
+  - `POST /dsh-tts/voice/clone` — клонирование голоса по загруженному сэмплу (#227).
   - `POST /dsh-tts/preview` — предпрослушивание голоса/провайдера.
   - `DELETE /dsh-tts/cache` — сброс дискового кэша аудио.
 - CLI:
@@ -32,7 +33,7 @@
 
 ### Supported Providers
 - Cloud: `openai`, `elevenlabs`, `google`, `azure`, `groq`, `deepgram`, `openrouter`, `siliconflow`, `deepinfra`, `fireworks`, `mimo`, `doubao`, `deepseek-web`, `custom`.
-- Local: `kokoro`, `f5`, `edge`, `piper`, `espeak`, `minimax`.
+- Local: `cosyvoice`, `kokoro`, `f5`, `edge`, `piper`, `espeak`, `minimax`.
 
 ## Visual Direction
 - Атмосфера: Нативный компонент DeepSeek Harness, строго следующий единому дизайн-коду экосистемы DSH.

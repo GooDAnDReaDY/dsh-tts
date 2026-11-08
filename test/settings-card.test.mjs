@@ -59,7 +59,7 @@ test('card covers all user-facing schema fields except documented KeyEnv slots',
   }
   assert.ok(keyEnv.length >= 10, 'expected credential-name KeyEnv fields in schema')
   // Advanced block must expose the previously missing limits/endpoints
-  for (const k of ['maxChars', 'sentenceChars', 'timeoutMs', 'maxQueue', 'openaiBaseUrl', 'mimoBaseUrl', 'mimoFormat', 'minimaxBin', 'doubaoAppId', 'doubaoCluster', 'doubaoBaseUrl', 'deepseekWebBaseUrl']) {
+  for (const k of ['maxChars', 'sentenceChars', 'timeoutMs', 'maxQueue', 'openaiBaseUrl', 'mimoBaseUrl', 'mimoFormat', 'minimaxBin', 'doubaoAppId', 'doubaoCluster', 'doubaoBaseUrl', 'deepseekWebBaseUrl', 'cosyvoiceUrl']) {
     assert.ok(card.has(k), `card must expose ${k}`)
   }
 })
