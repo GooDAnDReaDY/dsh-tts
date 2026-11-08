@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.4.38 (2026-11-08)
+
+### Added
+- **Intelligent Text Preprocessing & Content Filtering** (#217):
+  - Preprocessing pipeline strips terminal ANSI color codes, condenses raw git diff markers, and cleans stack trace lines before synthesis.
+  - Added configurable `cleanUrls` (default `true`) replacing verbose links with concise domain names.
+  - Added configurable `skipTables` (default `true`) collapsing markdown tables into spoken notices (`table, N rows`) instead of reciting raw delimiter and cell strings.
+  - Added configurable `keepInlineCode` (default `false`) enabling inline code backticks to be spoken when needed.
+- **TL;DR Speech Mode & Smart Speed** (#218):
+  - Added `extractTldr` supporting explicit markdown/bold summary headings (`### Summary`, `### Conclusion`, `### Резюме`, `### Итог`) and condensed paragraph extraction.
+  - Added volatile setting `tldrDefault` and per-turn context menu option `Speak TL;DR summary` in chat player UI.
+  - Added `computeAdaptiveRate` (Smart Speed) automatically scaling playback speed up to 1.25x for lengthy answers while keeping natural pace for short phrases.
+
 ## 0.4.37 (2026-10-29)
 
 ### Fixed
