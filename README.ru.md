@@ -135,6 +135,8 @@ graph LR
 | `fireworks` | Fireworks AI | `kokoro` | По умолчанию | `FIREWORKS_API_KEY` | Минимальная задержка инференса |
 | `minimax` | MiniMax Speech | `speech-01-turbo` | По умолчанию | `MINIMAX_API_KEY` | Выразительный эмоциональный голос |
 | `mimo` | Xiaomi MiMo Audio | `mimo-v2.5-tts` | По умолчанию | `MIMO_API_KEY` | Потоковый синтез речи |
+| `doubao` | ByteDance Doubao (Volcengine) | `seed-tts-1.0` | `BV001_streaming` | `DOUBAO_API_KEY` | Высокоточный синтез Doubao Seed-TTS 1.0 |
+| `deepseek-web` | DeepSeek Web Audio Bridge | `deepseek-chat` | По умолчанию | `DEEPSEEK_WEB_TOKEN` | Мост через официальный веб-сеанс DeepSeek |
 | `google` | Google Cloud TTS | `gemini-2.5-flash-preview-tts` | По умолчанию | `GEMINI_API_KEY` | Многоязычный Gemini TTS |
 | `azure` | Azure Cognitive Speech | `en-US-JennyNeural` | По умолчанию | `AZURE_SPEECH_KEY` | Корпоративный нейросинтез |
 | `deepgram` | Deepgram Aura | `aura-asteria-en` | `asteria` | `DEEPGRAM_API_KEY` | Сверхнизкая задержка ответа |
@@ -192,7 +194,7 @@ dsh-tts:
 
 ### Покрытие настроек в UI
 
-Карточка плагина (**Настройки → Плагины → Настройки плагинов**) показывает все пользовательские поля схемы, включая блок **Дополнительно**: `maxChars`, `sentenceChars`, `timeoutMs`, `maxQueue`, `openaiBaseUrl`, `mimoBaseUrl`, `mimoFormat`, `minimaxBin`.
+Карточка плагина (**Настройки → Плагины → Настройки плагинов**) показывает все пользовательские поля схемы, включая блок **Дополнительно**: `maxChars`, `sentenceChars`, `timeoutMs`, `maxQueue`, `openaiBaseUrl`, `mimoBaseUrl`, `mimoFormat`, `minimaxBin`, `doubaoAppId`, `doubaoCluster`, `doubaoBaseUrl`, `deepseekWebBaseUrl`.
 
 **API-ключи не хранятся в настройках плагина.** Вставляйте их в редакторе цепочки — значение уходит в credential store DSH через `PUT /dsh-tts/credential`.
 
