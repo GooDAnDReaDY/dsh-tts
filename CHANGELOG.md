@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.4.44 (2026-11-13)
+
+### Refactored
+- **Modularized Monolithic `apply()` in `lib/index.js`** (#237):
+  - Decomposed 684-line `apply()` monolith and 1001-line `lib/index.js` into focused domain modules:
+    - `lib/settings-api.js`: settings API, config response builder, and revision extraction.
+    - `lib/credentials.js`: provider key resolution, secure storage, and credentials views.
+    - `lib/synthesize.js`: synthesis pipeline, LLM reply summarization, and synthesis/flight cache fingerprinting.
+    - `lib/queue.js`: throttled synthesis queue, reservation settlement, and stream flushing.
+    - `lib/session-events.js`: lifecycle event listeners, agent persona dispatch, and barge-in management.
+    - `lib/tool.js`: `speak_text` tool registration.
+  - Reduced `apply()` to 101 lines (within <= 250 line limit) and `lib/index.js` to 382 lines (within <= 400 line limit).
+  - Preserved full backwards compatibility and all public exports (`Config`, `plainConfig`, `cleanOpts`, `cleanText`, `prepareSpeechText`, `extractRevision`).
+
 ## 0.4.43 (2026-11-13)
 
 ### Fixed

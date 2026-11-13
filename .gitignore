@@ -5,6 +5,7 @@ node_modules/
 *.key
 *.crt
 credentials.yaml
+!lib/credentials.js
 .planning/
 *.log
 .worktrees/
