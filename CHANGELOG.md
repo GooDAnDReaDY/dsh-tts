@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.4.43 (2026-11-13)
+
+### Fixed
+- **Release Tarball Artifact Guard & Pretest Check** (#234):
+  - Added `scripts/pack-check.mjs` running in `pretest` to prevent untracked `.tgz` archives from lingering in the repository root.
+  - Enforces tarball and file size limits under 256 KiB.
+- **Theme Color Tokens & CSS Cleanup** (#236):
+  - Migrated obsolete tokens `--dsw-alias-bg-hover` and `--dsh-border` with hardcoded `rgba(128,128,128,0.2)` fallbacks to canonical DSH tokens `--dsw-alias-bg-layer-2` and `--dsw-alias-border-l1`.
+  - Fully eliminated `rgba(` color fallbacks in client bundle.
+- **Silent Catch Discipline & Speech Text Preparation Diagnostics** (#238):
+  - Resolved unhandled rejection in speech text preparation at `lib/index.js:902` with logger warning and automatic raw text fallback so assistant turns are never silently dropped.
+  - Eliminated 22 empty catch statements across cache, engine manager, http utilities, and UI client fragments with explicit intention and logging.
+- **Transitive Dependency Security Vulnerabilities** (#239):
+  - Locked `zod >= 4.6.6` (mitigating GHSA-mrhx-c7xc-m3w5) and `fast-uri >= 3.1.9` (mitigating GHSA-w74x-v6f9-j3xg) in `package.json` overrides.
+  - Achieved 0 vulnerabilities in `npm audit --omit=dev`.
+
 ## 0.4.42 (2026-11-08)
 
 ### Added
